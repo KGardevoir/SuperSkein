@@ -1,3 +1,25 @@
+SuperSkein has apparently become orphaned, which is a shame, since its much faster (and in my opinion), better implementation of a slicer. 
+I will work hard to make this a comperable, faster alternative to SFACT, alot of bugs need to be fixed first (like not slicing one of the included sample files), but once thats done the following need to be accomplished: 
+*Complete reverse engineering and internal restructuring, make things faster by optimizing various components. 
+*Make command line access possible (this may require porting in its entirety to Java for access to command line arguments)
+*Add support for Volumetric Extrusion (Stepper Extruders)
+*Modern features like fans and beds
+*Add Calibration features, tool profiles, material profiles
+  *Ensure experimentally gathered data can be used
+  *Sfact-esq features
+*Add Different printing patterns
+*Resupport shells (external structure only)
+
+
+Some things I'd like to get this project to:
+*Change Name, first public release (what needs to be done?)
+*Experiment with different printing techniques for smoother surfaces
+*Super Awesome GUI (have MeshMRI integrated with a preview of the mesh), progressive mesh preview, watch the object being built while the code is being generated. 
+*Streaming G-Code, this may be just a pipe dream, but it would be cool to instantaniously be able to start printing (no waiting on total g-code generation, though it should be fast enough eliminate the whole waiting forever bit)
+*Add cool things like bump-mapped images, milling, lathing (maybe even rotary printing), lasering, multipass tooling (pretty much turn this into a multiplatform OSI CAM solution 
+
+
+
 SuperSkein Manual
 
 *Parameters
