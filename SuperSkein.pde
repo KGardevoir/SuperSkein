@@ -199,7 +199,7 @@ void draw(){
 		strokeWeight(1);
 		for(float px = 0; px<(BuildPlatformWidth*DisplayScale+1);px=px+GridSpacing*DisplayScale) line(px,0,px,BuildPlatformHeight*DisplayScale);
 		for(float py = 0; py<(BuildPlatformHeight*DisplayScale+1);py=py+GridSpacing*DisplayScale) line(0,py,BuildPlatformWidth*DisplayScale,py);
-		
+		 
 		if(STLLoadedFlag){
 			for(int i = STLFile.Triangles.size()-1;i>=0;i--){
 				Triangle tri = (Triangle) STLFile.Triangles.get(i);
