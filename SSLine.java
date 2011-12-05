@@ -12,6 +12,10 @@ class SSLine extends Line2D.Double {
 	
 //	double x1,y1,x2,y2;
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 9161900654120601922L;
 	double HeadSpeed;
 	double Flowrate;
 	
@@ -95,8 +99,7 @@ class SSLine extends Line2D.Double {
 	
 	
 	PVector ClosestSegmentPointToXY(double px, double py){
-		double m, c, m2, c2, u;
-		double xd, yd;
+		double xd, yd, u;
 		PVector pt;
 
 		xd = x2 - x1;
@@ -116,8 +119,7 @@ class SSLine extends Line2D.Double {
 
 
 	PVector ClosestExtendedLinePointToXY(double px, double py){
-		double m, c, m2, c2, u;
-		double xd, yd;
+		double xd, yd, u;
 		PVector pt;
 
 		xd = x2 - x1;
@@ -197,7 +199,7 @@ class SSLine extends Line2D.Double {
 		
 		double d	= dy2 * dx1 - dx2 * dy1;
 		double na = dx2 * dy3 - dy2 * dx3;		
-		double nb = dx1 * dy3 - dy1 * dx3;
+		//TODO fix? double nb = dx1 * dy3 - dy1 * dx3;
 		
 		if (d == 0) {
 			//if (na == 0.0 && nb == 0.0) {
@@ -207,7 +209,7 @@ class SSLine extends Line2D.Double {
 		}
 		
 		double ua = na / d;
-		double ub = nb / d;
+		//TODO fix? double ub = nb / d;
 		
 		double xi = x1 + ua * dx1;
 		double yi = y1 + ua * dy1;

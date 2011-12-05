@@ -5,6 +5,10 @@ import processing.core.PVector;
 
 class SSPath extends Path2D.Float {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8034991198131925267L;
 	double HeadSpeed;
 	double Flowrate;
 	

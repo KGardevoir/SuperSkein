@@ -6,8 +6,7 @@ import java.util.ArrayList;
 
 class Fill {
 	boolean debugFlag;
-	int Width;
-	int Height; 
+	long Width, Height; 
 	Extruder ExtruderProperties;
 	double SparseFillDensity;
 	double RotateFillAngle;
@@ -15,12 +14,16 @@ class Fill {
 	SSArea BridgeFill;
 
 	Fill(boolean bFlag, int iWidth, int iHeight, double fillDensity) {
+		this(bFlag,(long)iWidth,(long)iHeight,fillDensity); 
+	}
+
+	public Fill(boolean bFlag, long iWidth, long iHeight, double fillDensity) {
 		RotateFillAngle=45.0;
 		debugFlag=bFlag;
 		Width=iWidth;
 		Height=iHeight;
 		if(fillDensity<0 || fillDensity>1.0) {
-			System.out.println("Sparse Fill Density out of 0 to 1.0 range. Setting to 0.5");
+			System.out.println("Invalid Fill Density: out of 0 to 1.0 range. Setting to 0.5");
 			SparseFillDensity=0.5;
 		} else SparseFillDensity=fillDensity;
 		ExtruderProperties = new Extruder();

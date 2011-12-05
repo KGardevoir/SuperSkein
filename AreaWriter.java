@@ -10,8 +10,8 @@ import processing.dxf.*;
 class AreaWriter {
 
 	boolean debugFlag;
-	int Width;
-	int Height;
+	long Width;
+	long Height;
 
 	double OperatingTemp;
 	double FlowRate;
@@ -22,6 +22,10 @@ class AreaWriter {
 	RawDXF DXFOutput;
 	PApplet applet; 
 	AreaWriter(PApplet app, boolean bFlag, int iWidth, int iHeight) {
+		this(app,bFlag,(long)iWidth,(long)iHeight);
+	}
+
+	public AreaWriter(PApplet app, boolean bFlag, long iWidth, long iHeight) {
 		applet = app; 
 		debugFlag=bFlag;
 		Width=iWidth;

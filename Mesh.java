@@ -17,15 +17,17 @@ class Mesh {
 		applet = app; 
 		System.out.println ("loading file " + FileName + "...");
 		Triangles = new ArrayList<Triangle>();
-		Sink=0;
+		Sink = 0;
 
-		if (LoadTextMesh (FileName)){
+		if(LoadTextMesh (FileName)){
 			Valid = true;
 			CalculateBoundingBox();
-		} else if (LoadBinaryMesh (FileName)){
+		} else if(LoadBinaryMesh(FileName)){
 			Valid = true;
 			CalculateBoundingBox();
 		}
+		if(!Valid) throw new STLFormatException(); 
+		//Translate(0,0, -bz1); //set all Z's to zero.
 	}
 
 	private boolean LoadBinaryMesh(String FileName){
@@ -52,10 +54,7 @@ class Mesh {
 	}
 
 	private float bin_to_float(byte b, byte c, byte d, byte e) {//little endian to big endian
-		return  Float.intBitsToFloat((e << 24) |
-				((d & 0xff) << 16) |
-				((c & 0xff) << 8)|
-				(b & 0xff));
+		return  Float.intBitsToFloat((e << 24) | ((d & 0xff) << 16) | ((c & 0xff) << 8) | (b & 0xff));
 	}
 
 	private boolean LoadTextMesh (String path){
@@ -98,9 +97,9 @@ class Mesh {
 		try{
 			while (true){
 				buf = reader.readLine();
-				if (buf == null || buf.indexOf ("endsolid") == 0)// end of file or last valid line.. good stuff
+				if (buf == null || buf.indexOf("endsolid") == 0)// end of file or last valid line.. good stuff
 					break;
-				if (buf.indexOf ("facet normal") == -1)// sanity check.. 
+				if (buf.indexOf("facet normal") == -1)// sanity check.. 
 					return false;
 	
 				buf = reader.readLine();	// "		outer loop" 
@@ -125,7 +124,7 @@ class Mesh {
 				double y2 = Float.parseFloat (doubles[2 + offset]);
 				double z2 = Float.parseFloat (doubles[3 + offset]);
 
-				// 3rdd triangle
+				// 3rd triangle
 				doubles = reader.readLine().split("[\\s,;]+");
 				offset = doubles.length == 5 ? 1 : 0;
 				double x3 = Float.parseFloat (doubles[1 + offset]);
@@ -143,17 +142,15 @@ class Mesh {
 
 	void Scale(double Factor){
 		if(Double.isNaN(Factor))return;
-		for(int i = Triangles.size()-1;i>=0;i--){
-			Triangle tri = (Triangle) Triangles.get(i);
-			tri.Scale(Factor);
+		for(int i = 0; i < Triangles.size();i++){
+			Triangles.get(i).Scale(Factor);
 		}
 		CalculateBoundingBox();
 	}
 
 	void Translate(double tx, double ty, double tz){
-		for(int i = Triangles.size()-1;i>=0;i--){
-			Triangle tri = (Triangle) Triangles.get(i);
-			tri.Translate(tx,ty,tz);
+		for(int i = 0; i < Triangles.size();i++){
+			Triangles.get(i).Translate(tx,ty,tz);
 		}
 		CalculateBoundingBox();
 	}
@@ -161,9 +158,8 @@ class Mesh {
 
 	void RotateX(double Angle){
 		if(Double.isNaN(Angle)) return;
-		for(int i = Triangles.size()-1;i>=0;i--){
-			Triangle tri = (Triangle) Triangles.get(i);
-			tri.RotateX(Angle);
+		for(int i = 0; i < Triangles.size();i++){
+			Triangles.get(i).RotateX(Angle);
 		}
 		CalculateBoundingBox();
 	} 

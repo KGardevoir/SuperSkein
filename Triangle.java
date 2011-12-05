@@ -32,15 +32,15 @@ class Triangle {
 	
 	
 	void Translate(double tX, double tY, double tZ){
-		x1=x1+tX;
-		x2=x2+tX;
-		x3=x3+tX;
-		y1=y1+tY;
-		y2=y2+tY;
-		y3=y3+tY;
-		z1=z1+tZ;
-		z2=z2+tZ;
-		z3=z3+tZ;
+		x1+=tX;
+		x2+=tX;
+		x3+=tX;
+		y1+=tY;
+		y2+=tY;
+		y3+=tY;
+		z1+=tZ;
+		z2+=tZ;
+		z3+=tZ;
 	}
 	
 	//Rotations-- feed these in radians!

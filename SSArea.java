@@ -32,7 +32,7 @@ class SSArea extends Area {
 		path2polys.setGridScale(GridScale);
 		ArrayList<SSPoly> PolyList = path2polys.Path2Polys(thisSlice.SlicePath);
 		for(int i=0;i<PolyList.size();i++) {
-			SSPoly thisPoly = (SSPoly) PolyList.get(i);
+			SSPoly thisPoly = PolyList.get(i);
 			this.exclusiveOr(new Area((Shape) thisPoly));
 		}
 		AffineTransform scaleAreaTransform = new AffineTransform();

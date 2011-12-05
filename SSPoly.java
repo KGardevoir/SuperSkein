@@ -6,6 +6,10 @@ import java.awt.geom.PathIterator;
 import java.util.ArrayList;
 
 class SSPoly extends Polygon {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -119460655901776709L;
 	double GridScale;
 	double HeadSpeed;
 	double Flowrate;

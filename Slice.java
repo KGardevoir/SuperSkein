@@ -7,6 +7,7 @@ import processing.core.PVector;
 class Slice {
 	public SSPath SlicePath;
 	PApplet applet; 
+	@SuppressWarnings("unused")
 	//Right now this is all in the constructor.
 	//It might make more sense to split these
 	//out but that's a pretty minor difference
