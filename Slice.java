@@ -1,18 +1,22 @@
+import java.util.ArrayList;
+import processing.core.PApplet;
+import processing.core.PVector;
+
 // Slice Class
 //
 class Slice {
-	SSPath SlicePath;
-
+	public SSPath SlicePath;
+	PApplet applet; 
 	//Right now this is all in the constructor.
 	//It might make more sense to split these
 	//out but that's a pretty minor difference
 	//at the moment.
-	Slice(Mesh InMesh, float ZLevel){
-		
-		ArrayList UnsortedLines;
-		ArrayList Lines;
+	Slice(PApplet app, Mesh InMesh, double ZLevel) throws EmptyLineException{
+		applet = app; 
+		ArrayList<SSLine> UnsortedLines;
+		ArrayList<SSLine> Lines;
 		SSLine Intersection;
-		UnsortedLines = new ArrayList();
+		UnsortedLines = new ArrayList<SSLine>();
 		for(int i = InMesh.Triangles.size()-1;i>=0;i--){
 			Triangle tri = (Triangle) InMesh.Triangles.get(i);
 			Intersection = tri.GetZIntersect(ZLevel);
@@ -20,7 +24,7 @@ class Slice {
 		}
 		
 		
-		if(UnsortedLines == null) return;
+		if(UnsortedLines == null) throw new EmptyLineException();
 				
 		//Slice Sort: arrange the line segments so that
 		//each segment leads to the nearest available
@@ -28,19 +32,19 @@ class Slice {
 		//arraylists of lines, and at each step moving
 		//the nearest available line segment from the
 		//unsorted pile to the next slot in the sorted pile.
-		Lines = new ArrayList();
+		Lines = new ArrayList<SSLine>();
 		Lines.add(UnsortedLines.get(0));
 		int FinalSize = UnsortedLines.size();
 		UnsortedLines.remove(0);
 
 		//ratchets for distance
 		//dist_flipped exists to catch flipped lines
-		float dist, dist_flipped;
-		float mindist = 10000;
+		double dist, dist_flipped;
+		double mindist = 10000;
 
 		int iNextLine;
 
-		float epsilon = 1e-6;
+		double epsilon = 1e-6;
 		
 		//while(Lines.size()<FinalSize)
 		while(UnsortedLines.size()>0){
@@ -89,7 +93,7 @@ class Slice {
 		SSLine thisLine = (SSLine) Lines.get(0);	 
 		SlicePath = new SSPath(thisLine);
 		// Paths.add(thisPath);
-		PVector prevPt = new PVector(thisLine.x2,thisLine.y2);
+		PVector prevPt = wrapPVector(thisLine.x2,thisLine.y2);
 		for(int i=1;i<Lines.size();i++){
 			SSLine newLine = (SSLine) Lines.get(i);
 			boolean connectFlag = true;
@@ -98,9 +102,13 @@ class Slice {
 				connectFlag = false;
 			}
 			SlicePath.append(newLine,connectFlag);
-			prevPt = new PVector(newLine.x2,newLine.y2);
+			prevPt = wrapPVector(newLine.x2,newLine.y2);
 		}
 		SlicePath.closePath();
 	}
+	private double mag(double d, double e) {
+		return Math.sqrt(d*d+e*e);
+	}
+	private PVector wrapPVector(double x, double y){ return new PVector((float)x, (float)y);}
 } 
 

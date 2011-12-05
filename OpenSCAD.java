@@ -1,3 +1,5 @@
+import processing.core.PConstants;
+
 // OpenSCAD Wrapper Functions.
 
 class OpenSCAD {
@@ -10,7 +12,7 @@ class OpenSCAD {
 	OpenSCAD() {
 		execPath="/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD";
 		execArgs="-D render_select=0 -D slice_index=0";
-		outputType=DXF;
+		outputType=PConstants.DXF;
 		outputFile="output.dxf";
 	}
 
@@ -23,7 +25,7 @@ class OpenSCAD {
 	void setExecArgs(String iexecArgs) { execArgs=iexecArgs; }
 	void setExecPath(String iexecPath) { execPath=iexecPath; }
 	void setOutput(String ioutputType, String ioutputFile) {
-		if( ioutputType==DXF ) {
+		if( ioutputType==PConstants.DXF ) {
 			outputType=ioutputType;
 			outputFile=ioutputFile;
 		}
@@ -34,12 +36,12 @@ class OpenSCAD {
 
 	boolean run() {
 		String commandLine=execPath;
-		if(outputType==DXF) commandLine=commandLine+" -x "+outputFile+" "+execArgs;
+		if(outputType==PConstants.DXF) commandLine=commandLine+" -x "+outputFile+" "+execArgs;
 		if(!inputFile.equals("")) {
 			try {
 				commandLine+=" "+inputFile;
 				Runtime rtime = Runtime.getRuntime();
-				print("Command Line: "+commandLine+"\n");
+				System.out.print("Command Line: "+commandLine+"\n");
 				Process child = rtime.exec(commandLine);
 				child.waitFor();
 				return true;

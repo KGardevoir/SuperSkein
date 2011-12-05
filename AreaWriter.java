@@ -1,41 +1,48 @@
 // Class to write Areas out to DXF and other formats.
-import processing.dxf.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.PathIterator;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 
+import processing.core.PApplet;
+import processing.core.PConstants;
+import processing.dxf.*;
 class AreaWriter {
 
 	boolean debugFlag;
 	int Width;
 	int Height;
 
-	float OperatingTemp;
-	float FlowRate;
-	float LayerThickness;
-	float PrintHeadSpeed;
+	double OperatingTemp;
+	double FlowRate;
+	double LayerThickness;
+	double PrintHeadSpeed;
 
 	PrintWriter GCodeOutput;
 	RawDXF DXFOutput;
-
-	AreaWriter(boolean bFlag, int iWidth, int iHeight) {
+	PApplet applet; 
+	AreaWriter(PApplet app, boolean bFlag, int iWidth, int iHeight) {
+		applet = app; 
 		debugFlag=bFlag;
 		Width=iWidth;
 		Height=iHeight;
 	}
 
-	void setOperatingTemp(float aFloat) { OperatingTemp=aFloat; }
-	void setFlowRate(float aFloat) { FlowRate=aFloat; }
-	void setLayerThickness(float aFloat) { LayerThickness=aFloat; }
-	void setPrintHeadSpeed(float aFloat) { PrintHeadSpeed=aFloat; }
+	void setOperatingTemp(double aFloat) { OperatingTemp=aFloat; }
+	void setFlowRate(double aFloat) { FlowRate=aFloat; }
+	void setLayerThickness(double aFloat) { LayerThickness=aFloat; }
+	void setPrintHeadSpeed(double aFloat) { PrintHeadSpeed=aFloat; }
 
-	void ArrayList2DXF(String FileName, ArrayList AreaList) {
-		DXFOutput=(RawDXF) createGraphics(round(Width),round(Height),DXF,FileName);
-		beginRaw(DXFOutput);
+	void ArrayList2DXF(String FileName, ArrayList<SSArea> AreaList) {
+		DXFOutput = (RawDXF) applet.createGraphics(Math.round(Width),Math.round(Height),PConstants.DXF,FileName);
+		applet.beginRaw(DXFOutput);
 		for(int SliceNum=0;SliceNum<AreaList.size();SliceNum++) {
 			DXFOutput.setLayer(SliceNum);
 			SSArea thisArea=(SSArea) AreaList.get(SliceNum);
 			PathIterator pathIter=thisArea.getPathIterator(new AffineTransform());
-			float[] newCoords={0.0,0.0,0.0,0.0,0.0,0.0};
-			float[] prevCoords={0.0,0.0,0.0,0.0,0.0,0.0};
-			float[] startCoords={0.0,0.0,0.0,0.0,0.0,0.0};
+			double[] newCoords={0.0,0.0,0.0,0.0,0.0,0.0};
+			double[] prevCoords={0.0,0.0,0.0,0.0,0.0,0.0};
+			double[] startCoords={0.0,0.0,0.0,0.0,0.0,0.0};
 			int segType=pathIter.currentSegment(prevCoords);
 			segType=pathIter.currentSegment(startCoords);
 			pathIter.next();
@@ -43,29 +50,29 @@ class AreaWriter {
 				segType=pathIter.currentSegment(newCoords);
 				if(segType == PathIterator.SEG_LINETO ) {
 					// println("	SEG_LINETO: "+newCoords[0]+" "+newCoords[1]+"\n");
-					if(debugFlag) print(".");
-					DXFOutput.line(prevCoords[0],prevCoords[1],newCoords[0],newCoords[1]);
+					if(debugFlag) System.out.print(".");
+					DXFOutput.line((float)prevCoords[0],(float)prevCoords[1],(float)newCoords[0],(float)newCoords[1]);
 					segType=pathIter.currentSegment(prevCoords);
 				} else if( segType==PathIterator.SEG_CLOSE) {
-					if(debugFlag) println("\n	Slice: "+SliceNum+"	SEG_CLOSE: "+newCoords[0]+" "+newCoords[1]);
+					if(debugFlag) System.out.println("\n	Slice: "+SliceNum+"	SEG_CLOSE: "+newCoords[0]+" "+newCoords[1]);
 					// DXFOutput.line(prevCoords[0],prevCoords[1],newCoords[0],newCoords[1]);
-					DXFOutput.line(newCoords[0],newCoords[1],startCoords[0],startCoords[1]);
+					DXFOutput.line((float)newCoords[0],(float)newCoords[1],(float)startCoords[0],(float)startCoords[1]);
 					segType=pathIter.currentSegment(prevCoords);
 				} else if(segType == PathIterator.SEG_MOVETO) {
-					if(debugFlag) println("\n	Slice: "+SliceNum+"	SEG_MOVETO: "+newCoords[0]+" "+newCoords[1]);
+					if(debugFlag) System.out.println("\n	Slice: "+SliceNum+"	SEG_MOVETO: "+newCoords[0]+" "+newCoords[1]);
 					segType=pathIter.currentSegment(prevCoords);
 					segType=pathIter.currentSegment(startCoords);
 				} else {
-					println("\n	Slice: "+SliceNum+"	segType: "+segType);
+					System.out.println("\n	Slice: "+SliceNum+"	segType: "+segType);
 					segType=pathIter.currentSegment(prevCoords);
 				}
 				pathIter.next();
 			}
 		}
-		endRaw();
+		applet.endRaw();
 	}
 
-	void GCodeInit(String aString) { GCodeOutput = createWriter(aString); }
+	void GCodeInit(String aString) { GCodeOutput = applet.createWriter(aString); }
 
 	void GCodeWriteHeader() {
 		GCodeOutput.println("G21");
@@ -84,9 +91,9 @@ class AreaWriter {
 
 	void GCodeWriteArea(int SliceNum, SSArea thisArea) {
 		PathIterator pathIter=thisArea.getPathIterator(new AffineTransform());
-		float[] newCoords={0.0,0.0,0.0,0.0,0.0,0.0};
-		float[] prevCoords={0.0,0.0,0.0,0.0,0.0,0.0};
-		float[] startCoords={0.0,0.0,0.0,0.0,0.0,0.0};
+		double[] newCoords={0.0,0.0,0.0,0.0,0.0,0.0};
+		double[] prevCoords={0.0,0.0,0.0,0.0,0.0,0.0};
+		double[] startCoords={0.0,0.0,0.0,0.0,0.0,0.0};
 		int segType=pathIter.currentSegment(startCoords);
 		// Move to starting point
 		GCodeOutput.println("M103");
@@ -122,7 +129,7 @@ class AreaWriter {
 		GCodeOutput.println("M103");
 	}
 
-	void GCodeWriteModel(ArrayList SliceAreaList, ArrayList ShellAreaList, ArrayList FillAreaList) {
+	void GCodeWriteModel(ArrayList<SSArea> SliceAreaList, ArrayList<SSArea> ShellAreaList, ArrayList<SSArea> FillAreaList) {
 		for(int SliceNum=0;SliceNum<SliceAreaList.size();SliceNum++)
 		{
 			SSArea thisArea;
@@ -141,7 +148,7 @@ class AreaWriter {
 		}
 	}
 
-	void ArrayList2GCode(String FileName, ArrayList SliceAreaList, ArrayList ShellAreaList, ArrayList FillAreaList) {
+	void ArrayList2GCode(String FileName, ArrayList<SSArea> SliceAreaList, ArrayList<SSArea> ShellAreaList, ArrayList<SSArea> FillAreaList) {
 		GCodeInit(FileName);
 		GCodeWriteHeader();
 		GCodeWriteModel(SliceAreaList,ShellAreaList,FillAreaList);

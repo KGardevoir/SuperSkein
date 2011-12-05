@@ -1,3 +1,7 @@
+import java.io.PrintWriter;
+
+import processing.core.PApplet;
+
 //Configuration
 //This class acts both as a writer for config.txt
 //and as a storage space for all configuration variables.
@@ -9,19 +13,20 @@
 
 class Configuration {
 
-	float PreScale;
-	float XRotate;	
+	double PreScale;
+	double XRotate;	
 	String FileName;
 	
-	float PrintHeadSpeed;
-	float LayerThickness;
-	float Sink;
+	double PrintHeadSpeed;
+	double LayerThickness;
+	double Sink;
 	int OperatingTemp;
 	int FlowRate;
-	
+	PApplet applet; 
 	
 	//config values of last resort
-	Configuration() {
+	Configuration(PApplet app) {
+		applet = app; 
 		PreScale = 1.0;
 		XRotate = 0;
 		FileName="";	
@@ -33,10 +38,10 @@ class Configuration {
 	}
 
 	void Load(){
-		String[] input = loadStrings("config.txt");
+		String[] input = applet.loadStrings("config.txt");
 		int index = 0;
 		while (index < input.length) {
-			String[] pieces = split(input[index], '\t');
+			String[] pieces = PApplet.split(input[index], '\t');
 			if (pieces.length == 2) {
 				if(pieces[0].equals("CONFIG_SCALE"))PreScale=Float.parseFloat(pieces[1]);	
 				if(pieces[0].equals("CONFIG_STLFILE"))FileName=pieces[1];	
@@ -54,7 +59,7 @@ class Configuration {
 	}
 	
 	void Save(){
-		output = createWriter("config.txt");
+		PrintWriter output = applet.createWriter("config.txt");
 		output.print("CONFIG_SCALE\t" + PreScale + "\n");
 		output.print("CONFIG_XROTATE\t" + XRotate + "\n");
 		output.print("CONFIG_STLFILE\t" + FileName + "\n");

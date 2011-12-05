@@ -1,9 +1,9 @@
 // Triangle Class
 
 class Triangle {
-	float x1,x2,x3,y1,y2,y3,z1,z2,z3,xn,yn,zn;
+	double x1,x2,x3,y1,y2,y3,z1,z2,z3,xn,yn,zn;
 	
-	Triangle(float tX1, float tY1, float tZ1,float tX2, float tY2, float tZ2,float tX3, float tY3, float tZ3) {
+	Triangle(double tX1, double tY1, double tZ1,double tX2, double tY2, double tZ2,double tX3, double tY3, double tZ3) {
 		x1 = tX1;
 		y1 = tY1;
 		z1 = tZ1;
@@ -18,7 +18,7 @@ class Triangle {
 		Resort();
 	}
 	
-	void Scale(float Factor){
+	void Scale(double Factor){
 		x1 = Factor*x1;
 		y1 = Factor*y1;
 		z1 = Factor*z1;
@@ -31,7 +31,7 @@ class Triangle {
 	}
 	
 	
-	void Translate(float tX, float tY, float tZ){
+	void Translate(double tX, double tY, double tZ){
 		x1=x1+tX;
 		x2=x2+tX;
 		x3=x3+tX;
@@ -47,52 +47,52 @@ class Triangle {
 	//A great application is rotating your
 	//mesh to a desired orientation.
 	// 90 degrees = PI/2.
-	void RotateZ(float Angle){
-		float xn,yn;
-		xn = x1*cos(Angle) - y1*sin(Angle);
-		yn = x1*sin(Angle) + y1*cos(Angle);
+	void RotateZ(double Angle){
+		double xn,yn;
+		xn = x1*Math.cos(Angle) - y1*Math.sin(Angle);
+		yn = x1*Math.sin(Angle) + y1*Math.cos(Angle);
 		x1 = xn;
 		y1 = yn;
-		xn = x2*cos(Angle) - y2*sin(Angle);
-		yn = x2*sin(Angle) + y2*cos(Angle);
+		xn = x2*Math.cos(Angle) - y2*Math.sin(Angle);
+		yn = x2*Math.sin(Angle) + y2*Math.cos(Angle);
 		x2 = xn;
 		y2 = yn;
-		xn = x3*cos(Angle) - y3*sin(Angle);
-		yn = x3*sin(Angle) + y3*cos(Angle);
+		xn = x3*Math.cos(Angle) - y3*Math.sin(Angle);
+		yn = x3*Math.sin(Angle) + y3*Math.cos(Angle);
 		x3 = xn;
 		y3 = yn;
 		Resort();
 	}
 	
-	void RotateY(float Angle){
-		float xn,zn;
-		xn = x1*cos(Angle) - z1*sin(Angle);
-		zn = x1*sin(Angle) + z1*cos(Angle);
+	void RotateY(double Angle){
+		double xn,zn;
+		xn = x1*Math.cos(Angle) - z1*Math.sin(Angle);
+		zn = x1*Math.sin(Angle) + z1*Math.cos(Angle);
 		x1 = xn;
 		z1 = zn;
-		xn = x2*cos(Angle) - z2*sin(Angle);
-		zn = x2*sin(Angle) + z2*cos(Angle);
+		xn = x2*Math.cos(Angle) - z2*Math.sin(Angle);
+		zn = x2*Math.sin(Angle) + z2*Math.cos(Angle);
 		x2 = xn;
 		z2 = zn;
-		xn = x3*cos(Angle) - z3*sin(Angle);
-		zn = x3*sin(Angle) + z3*cos(Angle);
+		xn = x3*Math.cos(Angle) - z3*Math.sin(Angle);
+		zn = x3*Math.sin(Angle) + z3*Math.cos(Angle);
 		x3 = xn;
 		z3 = zn;
 		Resort();
 	}
 	
-	void RotateX(float Angle){
-		float yn,zn;
-		yn = y1*cos(Angle) - z1*sin(Angle);
-		zn = y1*sin(Angle) + z1*cos(Angle);
+	void RotateX(double Angle){
+		double yn,zn;
+		yn = y1*Math.cos(Angle) - z1*Math.sin(Angle);
+		zn = y1*Math.sin(Angle) + z1*Math.cos(Angle);
 		y1 = yn;
 		z1 = zn;
-		yn = y2*cos(Angle) - z2*sin(Angle);
-		zn = y2*sin(Angle) + z2*cos(Angle);
+		yn = y2*Math.cos(Angle) - z2*Math.sin(Angle);
+		zn = y2*Math.sin(Angle) + z2*Math.cos(Angle);
 		y2 = yn;
 		z2 = zn;
-		yn = y3*cos(Angle) - z3*sin(Angle);
-		zn = y3*sin(Angle) + z3*cos(Angle);
+		yn = y3*Math.cos(Angle) - z3*Math.sin(Angle);
+		zn = y3*Math.sin(Angle) + z3*Math.cos(Angle);
 		y3 = yn;
 		z3 = zn;
 		Resort();
@@ -103,9 +103,9 @@ class Triangle {
 	//out what kind of intersections the triangle
 	//makes with the plane, if any.	Returns
 	//null if the triangle does not intersect.
-	SSLine GetZIntersect(float ZLevel){
+	SSLine GetZIntersect(double ZLevel){
 		SSLine Intersect;
-		float xa,xb,ya,yb;
+		double xa,xb,ya,yb;
 		if(z1<ZLevel){
 			if(z2>ZLevel){
 				xa = x1 + (x2-x1)*(ZLevel-z1)/(z2-z1);
@@ -132,7 +132,28 @@ class Triangle {
 			}
 		} else return null;
 	}
-	
+	double getHigh(int idx){
+		switch(idx){
+		case 0: 
+			return Math.max(x1,Math.max(x2,x3)); 
+		case 1:
+			return Math.max(y1,Math.max(y2,y3)); 
+		case 2:
+			return Math.max(z1,Math.max(z2,z3));
+		}
+		return 0.;
+	}
+	double getLow(int idx){
+		switch(idx){
+		case 0: 
+			return Math.min(x1,Math.min(x2,x3)); 
+		case 1:
+			return Math.min(y1,Math.min(y2,y3)); 
+		case 2:
+			return Math.min(z1,Math.min(z2,z3));
+		}
+		return 0.; 
+	}
 	//In the old days, a triangle's normal was defined
 	//by right-hand-rule from the order vertices were
 	//defined.	If this were the case with STL this would

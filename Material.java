@@ -2,8 +2,8 @@
 
 class Material {
 	String TypeName;
-	float MeltTemp;
-	float ExtrudeTemp;
+	double MeltTemp;
+	double ExtrudeTemp;
 
 	Material(String aString) {
 		if(aString == "ABS") {
@@ -17,10 +17,10 @@ class Material {
 		}
 	}
 
-	void setMeltTemp(float aFloat) {
+	void setMeltTemp(double aFloat) {
 		MeltTemp=aFloat;
 	}
-	void setExtrudeTemp(float aFloat) {
+	void setExtrudeTemp(double aFloat) {
 		ExtrudeTemp=aFloat;
 	}
 

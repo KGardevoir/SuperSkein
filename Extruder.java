@@ -4,9 +4,9 @@ import java.lang.Math;
 class Extruder {
 	int ToolNum;
 	Material Filament;
-	float ZThick;
-	float Diameter;
-	float FlowRate;
+	double ZThick;
+	double Diameter;
+	double FlowRate;
 
 	Extruder() {
 		ToolNum=0;
@@ -29,29 +29,29 @@ class Extruder {
 		ZThick=0.37;
 	}
 
-	void setDiameter(float aFloat) {
+	void setDiameter(double aFloat) {
 		Diameter=aFloat;
 		if(ZThick>Diameter) {
-			println("Z thickness greater than extruded diameter. Setting Z thickness to half diameter.");
+			System.out.println("Z thickness greater than extruded diameter. Setting Z thickness to half diameter.");
 			ZThick=Diameter/2;
 		}
 	}
 
-	void setZThick(float aFloat) {
+	void setZThick(double aFloat) {
 		if(aFloat<Diameter) {
 			ZThick=aFloat;
 		} else {
-			println("Z thickness greater than extruded diameter. Setting Z thickness to half diameter.");
+			System.out.println("Z thickness greater than extruded diameter. Setting Z thickness to half diameter.");
 			ZThick=Diameter/2;
 		}
 	}
 
-	void setFlowRate(float aFloat) {
+	void setFlowRate(double aFloat) {
 		FlowRate=aFloat;
 	}
 
-	float calcWallWidth() {
-		float freespace_area=PI*pow(Diameter/2,2);
+	double calcWallWidth() {
+		double freespace_area=Math.PI*Math.pow(Diameter/2,2);
 		return freespace_area/ZThick;
 	}
 }

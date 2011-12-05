@@ -1,18 +1,22 @@
+import java.io.BufferedReader;
+import java.util.ArrayList;
+import processing.core.PApplet;
+
 // Mesh Class
 
 class Mesh {
-	ArrayList Triangles;
-	float bx1,by1,bz1,bx2,by2,bz2; //bounding box
+	ArrayList<Triangle> Triangles;
+	double bx1,by1,bz1,bx2,by2,bz2; //bounding box
 	boolean Valid;
+	double Sink;
 
-	float Sink;
-
+	PApplet applet; 
 	//Mesh Loading routine
-	Mesh(String FileName){
+	Mesh(PApplet app, String FileName){
 		Valid = false;
-		
-		println ("loading file " + FileName + "...");
-		Triangles = new ArrayList();
+		applet = app; 
+		System.out.println ("loading file " + FileName + "...");
+		Triangles = new ArrayList<Triangle>();
 		Sink=0;
 
 		if (LoadTextMesh (FileName)){
@@ -24,27 +28,34 @@ class Mesh {
 		}
 	}
 
-	private boolean LoadBinaryMesh (String FileName){
+	private boolean LoadBinaryMesh(String FileName){
 		try{
-			byte b[] = loadBytes(FileName);
-			float[] Tri = new float[9];
+			byte b[] = applet.loadBytes(FileName);
+			double[] Tri = new double[9];
 			//Skip the header
 			int offs = 84;
 			//Read each triangle out
 			while(offs<b.length){
 				offs = offs + 12; //skip the normals entirely!
 				for(int i = 0; i<9; i++){
-					Tri[i] = bin_to_float(b[offs],b[offs+1],b[offs+2],b[offs+3]);
+					Tri[i] = bin_to_float(b[offs], b[offs+1], b[offs+2], b[offs+3]);
 					offs = offs+4;
 				}
 				offs = offs+2;//Skip the attribute bytes
 				Triangles.add(new Triangle(Tri[0],Tri[1],Tri[2],Tri[3],Tri[4],Tri[5],Tri[6],Tri[7],Tri[8]));
 			}
 		} catch (Exception e) {
-			println ("Unable to load binary STL");
+			System.out.println ("Unable to load binary STL");
 			return false;
 		}
 		return true;
+	}
+
+	private float bin_to_float(byte b, byte c, byte d, byte e) {//little endian to big endian
+		return  Float.intBitsToFloat((e << 24) |
+				((d & 0xff) << 16) |
+				((c & 0xff) << 8)|
+				(b & 0xff));
 	}
 
 	private boolean LoadTextMesh (String path){
@@ -68,7 +79,7 @@ class Mesh {
 		String buf;
 
 		try {
-			reader = createReader (path);
+			reader = applet.createReader(path);
 			buf = reader.readLine();
 			if(buf.indexOf ("solid") != 0) // doesn't appear to be a text stl..
 				return false;
@@ -76,11 +87,11 @@ class Mesh {
 			// this is (more than..) a bit stupid. java complains if you ask it to open
 			// abc.stl when the file name is ABC.stl. figuring out and using then actual
 			// path somewhere above would be good..
-			println ("Unable to read from buffered reader. Check to make sure you gave the EXACT pathname (case matters)");
+			System.out.println("Unable to read from buffered reader. Check to make sure you gave the EXACT pathname (case matters)");
 			return false;
 		} catch (Exception e) {
 			// file doesn't exist or something.. likely won't fail on binary stl
-			println ("unable to read from buffered reader..");
+			System.out.println("unable to read from buffered reader..");
 			return false;
 		}
 
@@ -94,32 +105,32 @@ class Mesh {
 	
 				buf = reader.readLine();	// "		outer loop" 
 
-				String[] floats;
+				String[] doubles;
 				int offset;
 
-				// read in the first triangle.. "vertex " followed by 3 floats.. the 
+				// read in the first triangle.. "vertex " followed by 3 doubles.. the 
 				// regex string split sometimes returns an extra leading entry with
-				// nothing in it (5 elements in the 'floats' array) and sometimes 
+				// nothing in it (5 elements in the 'doubles' array) and sometimes 
 				// doesn't (4 elements) so check the length and offset by 1 if needed
-				floats = reader.readLine().split("[\\s,;]+");
-				offset = floats.length == 5 ? 1 : 0;
-				float x1 = Float.parseFloat (floats[1 + offset]);
-				float y1 = Float.parseFloat (floats[2 + offset]);
-				float z1 = Float.parseFloat (floats[3 + offset]);
+				doubles = reader.readLine().split("[\\s,;]+");
+				offset = doubles.length == 5 ? 1 : 0;
+				double x1 = Float.parseFloat (doubles[1 + offset]);
+				double y1 = Float.parseFloat (doubles[2 + offset]);
+				double z1 = Float.parseFloat (doubles[3 + offset]);
 
 				// 2nd triangle
-				floats = reader.readLine().split("[\\s,;]+");
-				offset = floats.length == 5 ? 1 : 0;
-				float x2 = Float.parseFloat (floats[1 + offset]);
-				float y2 = Float.parseFloat (floats[2 + offset]);
-				float z2 = Float.parseFloat (floats[3 + offset]);
+				doubles = reader.readLine().split("[\\s,;]+");
+				offset = doubles.length == 5 ? 1 : 0;
+				double x2 = Float.parseFloat (doubles[1 + offset]);
+				double y2 = Float.parseFloat (doubles[2 + offset]);
+				double z2 = Float.parseFloat (doubles[3 + offset]);
 
 				// 3rdd triangle
-				floats = reader.readLine().split("[\\s,;]+");
-				offset = floats.length == 5 ? 1 : 0;
-				float x3 = Float.parseFloat (floats[1 + offset]);
-				float y3 = Float.parseFloat (floats[2 + offset]);
-				float z3 = Float.parseFloat (floats[3 + offset]);
+				doubles = reader.readLine().split("[\\s,;]+");
+				offset = doubles.length == 5 ? 1 : 0;
+				double x3 = Float.parseFloat (doubles[1 + offset]);
+				double y3 = Float.parseFloat (doubles[2 + offset]);
+				double z3 = Float.parseFloat (doubles[3 + offset]);
 
 				Triangles.add (new Triangle (x1, y1, z1, x2, y2, z2, x3, y3, z3));
 
@@ -130,8 +141,8 @@ class Mesh {
 		return true;
 	}
 
-	void Scale(float Factor){
-		if(Float.isNaN(Factor))return;
+	void Scale(double Factor){
+		if(Double.isNaN(Factor))return;
 		for(int i = Triangles.size()-1;i>=0;i--){
 			Triangle tri = (Triangle) Triangles.get(i);
 			tri.Scale(Factor);
@@ -139,7 +150,7 @@ class Mesh {
 		CalculateBoundingBox();
 	}
 
-	void Translate(float tx, float ty, float tz){
+	void Translate(double tx, double ty, double tz){
 		for(int i = Triangles.size()-1;i>=0;i--){
 			Triangle tri = (Triangle) Triangles.get(i);
 			tri.Translate(tx,ty,tz);
@@ -148,8 +159,8 @@ class Mesh {
 	}
 
 
-	void RotateX(float Angle){
-		if(Float.isNaN(Angle)) return;
+	void RotateX(double Angle){
+		if(Double.isNaN(Angle)) return;
 		for(int i = Triangles.size()-1;i>=0;i--){
 			Triangle tri = (Triangle) Triangles.get(i);
 			tri.RotateX(Angle);
@@ -158,32 +169,21 @@ class Mesh {
 	} 
 
 	void CalculateBoundingBox(){
-		bx1 = 10000;
-		bx2 = -10000;
-		by1 = 10000;
-		by2 = -10000;
-		bz1 = 10000;
-		bz2 = -10000;
-		for(int i = Triangles.size()-1;i>=0;i--){
-			Triangle tri = (Triangle) Triangles.get(i);
-			if(tri.x1<bx1) bx1=tri.x1;
-			if(tri.x2<bx1) bx1=tri.x2;
-			if(tri.x3<bx1) bx1=tri.x3;
-			if(tri.x1>bx2) bx2=tri.x1;
-			if(tri.x2>bx2) bx2=tri.x2;
-			if(tri.x3>bx2) bx2=tri.x3;
-			if(tri.y1<by1) by1=tri.y1;
-			if(tri.y2<by1) by1=tri.y2;
-			if(tri.y3<by1) by1=tri.y3;
-			if(tri.y1>by2) by2=tri.y1;
-			if(tri.y2>by2) by2=tri.y2;
-			if(tri.y3>by2) by2=tri.y3;
-			if(tri.z1<bz1) bz1=tri.z1;
-			if(tri.z2<bz1) bz1=tri.z2;
-			if(tri.z3<bz1) bz1=tri.z3;
-			if(tri.z1>bz2) bz2=tri.z1;
-			if(tri.z2>bz2) bz2=tri.z2;
-			if(tri.z3>bz2) bz2=tri.z3;
+		Triangle tri = Triangles.get(0);
+		bx1 = tri.getLow(0);
+		bx2 = tri.getHigh(0);
+		by1 = tri.getLow(1);
+		by2 = tri.getHigh(1);
+		bz1 = tri.getLow(2);
+		bz2 = tri.getHigh(2);
+		for(int i = 1; i < Triangles.size(); i++){
+			tri = Triangles.get(i); 
+			bx1 = Math.min(tri.getLow(0), bx1);
+			bx2 = Math.max(tri.getHigh(0), bx2);
+			by1 = Math.min(tri.getLow(1), by1);
+			by2 = Math.max(tri.getHigh(1), by2);
+			bz1 = Math.min(tri.getLow(2), bz1);
+			bz2 = Math.max(tri.getHigh(2), bz2);
 		}		
 	}
 }	

@@ -1,10 +1,12 @@
 // Path Class
 import java.awt.geom.Path2D;
 
+import processing.core.PVector;
+
 class SSPath extends Path2D.Float {
 
-	float HeadSpeed;
-	float Flowrate;
+	double HeadSpeed;
+	double Flowrate;
 	
 	// constructor.
 	// Initializes a new path object, with no path points.
@@ -20,7 +22,7 @@ class SSPath extends Path2D.Float {
 	}
 
 	// Adds a point to the end of the path.
-	void addPoint(float X, float Y){
+	void addPoint(double X, double Y){
 		super.lineTo(X,Y);
 	}
 
@@ -45,7 +47,7 @@ class SSPath extends Path2D.Float {
 
 	// If the point is inside the closed path, returns true.	False otherwise.
 	// If the path is not closed, then returns false.
-	boolean containsPoint(float X, float Y){
+	boolean containsPoint(double X, double Y){
 		return( super.contains(X,Y) );
 	}
 }
