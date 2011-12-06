@@ -16,9 +16,9 @@ class Configuration {
 	public String FileName;
 	
 	public double PreScale, XRotate, PrintFeedrate, OrbitalFeedrate;
-	public double LayerThickness, Sink, FirstLayer;
+	public double LayerThickness, XYExtrusionThickness, Sink, FirstLayer;
 	public int BuildPlatformWidth, BuildPlatformHeight, OperatingTemp; 
-	public double StepperFlowRate;
+	public double StepperFlowRate, BridgeFeedrateModifier;
 	public int ServoFlowRate;
 	public int Percision; 
 	private PApplet applet;
@@ -52,8 +52,10 @@ class Configuration {
 		RetractDistance = 0;
 		Tool = ToolType.Stepper; 
 		ShellThickness = 2; 
+		XYExtrusionThickness = .27; 
 		InFill = 0.3; 
 		SupportDegree = 0.35; 
+		BridgeFeedrateModifier = 1.4; 
 		AddSupport = true; 
 	}
 
@@ -63,31 +65,35 @@ class Configuration {
 		for(index = 0; index < input.length; index++) {
 			String[] pieces = PApplet.split(input[index], ' ');
 			if (pieces.length == 2){
-				if(pieces[0].equals("SCALE")) PreScale=Double.parseDouble(pieces[1]);	
 				if(pieces[0].equals("STL_FILE")) FileName=pieces[1];	
-				if(pieces[0].equals("X_ROTATE")) XRotate=Double.parseDouble(pieces[1]);	
-				if(pieces[0].equals("OPERATING_TEMPERATURE")) OperatingTemp=Integer.parseInt(pieces[1]);	
-				if(pieces[0].equals("SINK")) Sink=Double.parseDouble(pieces[1]);	
-				if(pieces[0].equals("PRINT_FEEDRATE")) PrintFeedrate=Double.parseDouble(pieces[1]);	
-				if(pieces[0].equals("MACHINE_LAYERTHICKNESS")) LayerThickness=Double.parseDouble(pieces[1]);	
-				if(pieces[0].equals("FIRST_LAYER_HEIGHT")) FirstLayer=Double.parseDouble(pieces[1]);
 				if(pieces[0].equals("PARAMETER_PERCISION")) Percision=Math.min(15, Math.max(0,Integer.parseInt(pieces[1])));
-				if(pieces[0].equals("RETRACT_DISTANCE")) RetractDistance=Double.parseDouble(pieces[1]); 
-				if(pieces[0].equals("ORBITAL_FEEDRATE")) OrbitalFeedrate=Double.parseDouble(pieces[1]); 
+				if(pieces[0].equals("OPERATING_TEMPERATURE")) OperatingTemp=Integer.parseInt(pieces[1]);	
 				if(pieces[0].equals("TOOL_TYPE")) Tool = ToolType.valueOf(pieces[1]); 
+				if(pieces[0].equals("RETRACT_DISTANCE")) RetractDistance=Double.parseDouble(pieces[1]); 
+				if(pieces[0].equals("PRINT_FEEDRATE")) PrintFeedrate=Double.parseDouble(pieces[1]);	
+				if(pieces[0].equals("ORBITAL_FEEDRATE")) OrbitalFeedrate=Double.parseDouble(pieces[1]); 
+				if(pieces[0].equals("BRIDGE_FEEDRATE_MODIFIER")) BridgeFeedrateModifier = Double.parseDouble(pieces[1]); 
 				if(pieces[0].equals("SHELL_THICKNESS")) ShellThickness = Integer.parseInt(pieces[1]); 
-				if(pieces[0].equals("INFILL")) InFill = Double.parseDouble(pieces[1])/100.;
+				if(pieces[0].equals("LAYER_XYEXTRUSION")) XYExtrusionThickness = Double.parseDouble(pieces[1]); 
+				if(pieces[0].equals("LAYER_THICKNESS")) LayerThickness=Double.parseDouble(pieces[1]);	
+				if(pieces[0].equals("FIRST_LAYER_HEIGHT")) FirstLayer=Double.parseDouble(pieces[1]);
 				if(pieces[0].equals("ADD_SUPPORT_DEGREE")) SupportDegree = Double.parseDouble(pieces[1])/100.; 
+				
 				if(pieces[0].equals("ADD_SUPPORT")) AddSupport = Boolean.parseBoolean(pieces[1]); 
+				if(pieces[0].equals("INFILL")) InFill = Double.parseDouble(pieces[1])/100.;
+				if(pieces[0].equals("SCALE")) PreScale=Double.parseDouble(pieces[1]);	
+				if(pieces[0].equals("X_ROTATE")) XRotate=Double.parseDouble(pieces[1]);	
+				if(pieces[0].equals("SINK")) Sink=Double.parseDouble(pieces[1]);	
+				
 			}
 			if(pieces.length == 3){
-				if(pieces[0].equals("FLOWRATE")){
-					ServoFlowRate=Integer.parseInt(pieces[1]);	
-					StepperFlowRate=Double.parseDouble(pieces[2]); 
-				}
 				if(pieces[0].equals("BUILD_PLATFORM")){
 					BuildPlatformWidth = Integer.parseInt(pieces[1]);
 					BuildPlatformHeight = Integer.parseInt(pieces[2]);
+				}
+				if(pieces[0].equals("FLOWRATE")){
+					ServoFlowRate=Integer.parseInt(pieces[1]);	
+					StepperFlowRate=Double.parseDouble(pieces[2]); 
 				}
 			}
 			if(pieces.length == 4){
@@ -108,14 +114,18 @@ class Configuration {
 		output.printf("OPERATING_TEMPERATURE %d\n", OperatingTemp);
 		output.printf("TOOL_TYPE %s\n", Tool.name());
 		output.printf("FLOWRATE %d %."+Percision+"f\n", ServoFlowRate, StepperFlowRate);
+		output.printf("RETRACT_DISTANCE %."+Percision+"f\n", RetractDistance); 
 		output.printf("PRINT_FEEDRATE %." + Percision + "f\n", PrintFeedrate);
 		output.printf("ORBITAL_FEEDRATE %."+Percision+"f\n", OrbitalFeedrate); 
+		output.printf("BRIDGE_FEEDRATE_MODIFIER %."+Percision+"f\n", BridgeFeedrateModifier);
 		output.printf("BACKLASH %."+Percision+"f %."+Percision+"f %."+Percision+"f\n", BacklashX, BacklashY, BacklashZ);
+		output.printf("SHELL_THICKNESS %d\n", ShellThickness); 
+		output.printf("LAYER_XYEXTRUSION %."+Percision+"4f\n", XYExtrusionThickness); 
 		output.printf("LAYER_THICKNESS %." + Percision + "f\n", LayerThickness);
 		output.printf("FIRST_LAYER_HEIGHT %." + Percision + "f\n", FirstLayer); 
 		output.printf("ADD_SUPPORT_DEGREE %."+ Percision + "f\n\n", SupportDegree*100); 
 		
-		output.printf("ADD_SUPPORT %."+Percision+"f\n", AddSupport);
+		output.printf("ADD_SUPPORT %s\n", AddSupport);
 		output.printf("INFILL %."+Percision+"f\n", InFill*100);
 		output.printf("SCALE %."+ Percision +"f\n", PreScale);
 		output.printf("X_ROTATE %."+ Percision +"f\n", XRotate);
