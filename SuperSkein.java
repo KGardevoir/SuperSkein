@@ -288,7 +288,8 @@ public class SuperSkein extends PApplet {
 				MeshHeight = STLFile.bz2-STLFile.bz1;
 				STLLoadFraction = 1.1;
 				STLLoadedFlag = true;
-				System.out.println("MeshHeight = STLFile.bz2-STLFile.bz1: " +STLFile.bz2 + "-" + STLFile.bz1 + "="+ MeshHeight); 
+				System.out.println("MeshHeight = " + MeshHeight);
+				System.out.println("Number of Slices: " + Math.floor(MeshHeight)/MyConfig.LayerThickness);
 				redraw();
 			}
 		}
