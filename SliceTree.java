@@ -44,7 +44,7 @@ public class SliceTree {
 			for(IndexBooleanArray links : pathtype){
 				i++; k = 0; 
 				for(int j = 0; j < links.arr.length; j++)
-					if(links.arr[j]) k++; 
+					if(links.has(j)) k++; 
 				if(k == bneed) break; //we found a link
 			}
 			if(k == bneed){//we have a node, its of the right order, now we need to its home

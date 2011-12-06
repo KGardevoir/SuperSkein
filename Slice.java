@@ -1,11 +1,10 @@
 import java.util.ArrayList;
 import processing.core.PApplet;
-import processing.core.PVector;
 
 // Slice Class
 //
 class Slice {
-	public SSPath SlicePath;
+	public SliceTree slice;
 	PApplet applet; 
 	@SuppressWarnings("unused")
 	//Right now this is all in the constructor.
@@ -91,25 +90,35 @@ class Slice {
 			UnsortedLines.remove(iNextLine);
 		}
 //		Paths = new ArrayList();
-		SSLine thisLine = (SSLine) Lines.get(0);	 
-		SlicePath = new SSPath(thisLine);
-		// Paths.add(thisPath);
-		PVector prevPt = wrapPVector(thisLine.x2,thisLine.y2);
-		for(int i=1;i<Lines.size();i++){
-			SSLine newLine = (SSLine) Lines.get(i);
-			boolean connectFlag = true;
-			if(newLine.x1 != prevPt.x || newLine.y1 != prevPt.y){
-				SlicePath.closePath();
-				connectFlag = false;
+		ArrayList<SSPath> paths = new ArrayList<SSPath>(); 
+		int k = 0; 
+		double sx, sy; 
+		for(int i = 0; k < Lines.size(); i++){
+			SSPath path = new SSPath(); 
+			paths.add(path);
+			SSLine line = Lines.get(k++);
+			path.addPoint(line.x1, line.y1); 
+			path.addPoint(line.x2, line.x2); 
+			sx = line.x1; sy = line.y1; 
+			double lx = line.x2, ly = line.y2; 
+			while(k < Lines.size()){
+				line = Lines.get(k++); 
+				if(Math.abs(line.x2 - sx) < 1e6 && Math.abs(line.y2-sy) < 1e6){
+					//end of loop
+					path.closePath(); 
+					break; 
+				} else if(Math.abs(lx - line.x1) > 1e6 || Math.abs(ly - line.y1) > 1e6) {//check to see if we need to force the end of loop
+					path.closePath(); 
+					break; 
+				} else {
+					path.addPoint(lx = line.x2, ly = line.y2); 
+				}
 			}
-			SlicePath.append(newLine,connectFlag);
-			prevPt = wrapPVector(newLine.x2,newLine.y2);
 		}
-		SlicePath.closePath();
+		slice = new SliceTree(paths); 
 	}
 	private double mag(double d, double e) {
 		return Math.sqrt(d*d+e*e);
 	}
-	private PVector wrapPVector(double x, double y){ return new PVector((float)x, (float)y);}
 } 
 
