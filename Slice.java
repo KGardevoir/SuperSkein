@@ -1,10 +1,11 @@
 import java.util.ArrayList;
 import processing.core.PApplet;
+import processing.core.PVector;
 
 // Slice Class
 //
 class Slice {
-	public SliceTree slice;
+	public SSPath SlicePath;
 	PApplet applet; 
 	@SuppressWarnings("unused")
 	//Right now this is all in the constructor.
@@ -47,13 +48,13 @@ class Slice {
 		double epsilon = 1e-6;
 		
 		//while(Lines.size()<FinalSize)
-		while(!UnsortedLines.isEmpty()){
-			SSLine CLine = (SSLine) Lines.get(0);//Get First
-			iNextLine = 0;
+		while(UnsortedLines.size()>0){
+			SSLine CLine = (SSLine) Lines.get(Lines.size()-1);//Get last
+			iNextLine = (Lines.size()-1);
 			mindist = 10000;
 			boolean doflip = false;
-			for(int i = UnsortedLines.size()-1; i > 0; i++){//go backwards for constant time remove function
-				SSLine LineCandidate = UnsortedLines.get(i);
+			for(int i = UnsortedLines.size()-1;i>=0;i--){
+				SSLine LineCandidate = (SSLine) UnsortedLines.get(i);
 				dist				 = mag(LineCandidate.x1-CLine.x2, LineCandidate.y1-CLine.y2);
 				dist_flipped 		 = mag(LineCandidate.x2-CLine.x2, LineCandidate.y2-CLine.y2); // flipped
 					
@@ -84,38 +85,31 @@ class Slice {
 					mindist = dist_flipped;
 				}
 			}
-			SSLine LineToMove = UnsortedLines.get(iNextLine);
+			SSLine LineToMove = (SSLine) UnsortedLines.get(iNextLine);
 			if(doflip) LineToMove.Flip();
 			Lines.add(LineToMove);
 			UnsortedLines.remove(iNextLine);
-		}//this "sorts" the lines, it actually just pairs them with their next neighbor to create paths
-//		Paths = new ArrayList();
-		
-		//first we must determine if is inner or outer to do this we have to separate the paths
-		ArrayList<SSPath> paths = new ArrayList<SSPath>(); 
-		int k = 0, i = 0; 
-		while(k < Lines.size()){
-			paths.add(new SSPath());
-			SSLine plines = Lines.get(k++);
-			double sx, sy; 
-			paths.get(i).addPoint(sx = plines.x1, sy = plines.y1); 
-			boolean notconnected = true; 
-			while(notconnected && k < Lines.size()){
-				SSLine npline = Lines.get(k++); 
-				double x, y; 
-				paths.get(i).addPoint(x = npline.x2, y = npline.y2); 
-				if(Math.abs(sx-x) > 1e6 && Math.abs(sy-y) > 1e6){
-					notconnected = true; 
-					break;
-				}
-			}
-			i++; 
 		}
-		//turn path into a bunch of other paths by using a tree (so we know who falls where in relation to whom)
-		slice = new SliceTree(paths); 
+//		Paths = new ArrayList();
+		SSLine thisLine = (SSLine) Lines.get(0);	 
+		SlicePath = new SSPath(thisLine);
+		// Paths.add(thisPath);
+		PVector prevPt = wrapPVector(thisLine.x2,thisLine.y2);
+		for(int i=1;i<Lines.size();i++){
+			SSLine newLine = (SSLine) Lines.get(i);
+			boolean connectFlag = true;
+			if(newLine.x1 != prevPt.x || newLine.y1 != prevPt.y){
+				SlicePath.closePath();
+				connectFlag = false;
+			}
+			SlicePath.append(newLine,connectFlag);
+			prevPt = wrapPVector(newLine.x2,newLine.y2);
+		}
+		SlicePath.closePath();
 	}
 	private double mag(double d, double e) {
 		return Math.sqrt(d*d+e*e);
 	}
+	private PVector wrapPVector(double x, double y){ return new PVector((float)x, (float)y);}
 } 
 
