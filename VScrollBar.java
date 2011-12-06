@@ -51,8 +51,13 @@ class VScrollbar {
 		}
 		applet.rect(xpos, (float) spos, swidth, bheight);
 	}
-	
-	void set_BarHeight(int bh){ 
+	void setScrollHeight(int sh){
+		this.spos *= sh/(double)this.sheight;//recal spos
+		this.sheight = sh; 
+		this.sposMax = this.ypos + sh; 
+		this.ratio = 1./(double)(sh - this.bheight); 
+	}
+	void setBarHeight(int bh){ 
 		this.bheight = bh;
 		this.ratio = 1. / (double)(sheight - bh);
 	}
