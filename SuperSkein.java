@@ -29,7 +29,7 @@ public class SuperSkein extends PApplet {
 
 	//Display Properties
 	float GridSpacing = 10;
-	float DisplayScale = 5;
+	double DisplayScale = 5;
 
 
 	//End of "easy" modifications you can make...
@@ -96,16 +96,16 @@ public class SuperSkein extends PApplet {
 		DXFWriteButton = new GUI(thisapplet, 10,175,100,15, "Write DXF Slices");
 		DXFWriteProgress = new GUIProgressBar(thisapplet, 120,175,370,15);
 		
-		STLName = new GUITextBox(thisapplet, 120,25,370,15,"sculpt_dragon.stl");
+		STLName = new GUITextBox(thisapplet, 120,25,AppWidth-30,15,"sculpt_dragon.stl");
 		STLScale = new GUIFloatBox(thisapplet, 120,50,100,15, "1.0");
-		STLXRotate = new GUIFloatBox(thisapplet, 390,50,100,15, "0.0");
+		STLXRotate = new GUIFloatBox(thisapplet, AppWidth-10,50,100,15, "0.0");
 		
 		layerHeight = new VScrollbar(thisapplet, 0, 0, 10, AppHeight, 10); 
 		RightButton = new GUI(thisapplet, AppWidth-90,AppHeight-20,80,15, "Right");
 		LeftButton = new GUI(thisapplet, 10,AppHeight-20,80,15, "Left");
 		
 		size(AppWidth,AppHeight,P2D);
-
+		DisplayScale=Math.min(AppWidth/MyConfig.BuildPlatformWidth, AppHeight/MyConfig.BuildPlatformHeight);
 		Slice = new ArrayList<Slice>();
 		
 		if(DXFExportMode != 0) DXFWriteThread = new Thread(DXFWrite);
@@ -144,9 +144,17 @@ public class SuperSkein extends PApplet {
 		
 
 		//GUI Pages
-
+		RightButton.x = this.width-90;
+		RightButton.y = this.height-20;
+		LeftButton.y = this.height-20;
 		//Interface Page
 		if(GUIPage == 0){
+			STLLoadProgress.w = this.width - 130; 
+			FileWriteProgress.w = this.width - 130; 
+			STLName.w = this.width - 130; 
+			STLXRotate.x = this.width - 110; 
+			DXFWriteProgress.w = this.width - 130; 
+
 			textAlign(CENTER);
 			textFont(font);
 			textMode(SCREEN);
@@ -159,7 +167,7 @@ public class SuperSkein extends PApplet {
 			text("Scale Factor",10,62);
 			STLScale.display();
 			
-			text("X-Rotation",300,62);
+			text("X-Rotation",this.width - 200,62);
 			STLXRotate.display();
 
 			
@@ -178,6 +186,8 @@ public class SuperSkein extends PApplet {
 		//Only relates to the final gcode in that
 		//it shows you 2D sections of the mesh.
 		if(GUIPage==1){
+			layerHeight.setScrollHeight(this.height); 
+			DisplayScale=Math.min(this.width/(double)MyConfig.BuildPlatformWidth, this.height/(double)MyConfig.BuildPlatformHeight);
 			layerHeight.display(mousePressed); 
 			textAlign(CENTER);
 			textFont(font);
@@ -190,13 +200,12 @@ public class SuperSkein extends PApplet {
 			//Draw the grid
 			stroke(80);
 			strokeWeight(1);
-			for(float px = 0; px<(MyConfig.BuildPlatformWidth*DisplayScale+1);px=px+GridSpacing*DisplayScale) line(px,0,px,MyConfig.BuildPlatformHeight*DisplayScale);
-			for(float py = 0; py<(MyConfig.BuildPlatformHeight*DisplayScale+1);py=py+GridSpacing*DisplayScale) line(0,py,MyConfig.BuildPlatformWidth*DisplayScale,py);
+			for(double px = 0; px<(MyConfig.BuildPlatformWidth*DisplayScale+1);px=px+GridSpacing*DisplayScale) line(px,0,px,MyConfig.BuildPlatformHeight*DisplayScale);
+			for(double py = 0; py<(MyConfig.BuildPlatformHeight*DisplayScale+1);py=py+GridSpacing*DisplayScale) line(0,py,MyConfig.BuildPlatformWidth*DisplayScale,py);
 			 
 			if(STLLoadedFlag){
 				stroke(255);
 				strokeWeight(2);
-				//double scale = Math.min(BuildPlatformWidth/(STLFile.bx2-STLFile.bx1),BuildPlatformHeight/(STLFile.by2-STLFile.by1));
 				for(int i = 0; i <STLFile.Triangles.size(); i++){
 					Triangle tri = (Triangle) STLFile.Triangles.get(i);
 					if((Intersection = tri.GetZIntersect(MeshHeight*(1.-layerHeight.getPos())+STLFile.bz1)) != null){
@@ -245,11 +254,11 @@ public class SuperSkein extends PApplet {
 	}
 
 	public void mouseMoved(){
-		if(GUIPage == 1) redraw();
+		redraw();
 	}
 
 	public void mouseReleased(){
-		if(GUIPage == 1) redraw(); 
+		redraw(); 
 	}
 
 
@@ -289,7 +298,7 @@ public class SuperSkein extends PApplet {
 				STLLoadFraction = 1.1;
 				STLLoadedFlag = true;
 				System.out.println("MeshHeight = " + MeshHeight);
-				System.out.println("Number of Slices: " + Math.floor(MeshHeight)/MyConfig.LayerThickness);
+				System.out.println("Number of Slices: " + (int)Math.floor((MeshHeight-MyConfig.FirstLayer)/MyConfig.LayerThickness));
 				redraw();
 			}
 		}
@@ -299,7 +308,7 @@ public class SuperSkein extends PApplet {
 	class FileWriteProc implements Runnable{
 		public void run(){
 			while(true){
-				while(!FileWriteTrigger)delay(300);
+				while(!FileWriteTrigger) delay(300);
 				String GCodeFileName = selectOutput("Save G-Code to This File");
 				if(GCodeFileName == null) {
 					println("No file was selected; using STL File as G-Code file prefix.");
@@ -310,26 +319,27 @@ public class SuperSkein extends PApplet {
 				FileWriteFraction=(float) 0.1;
 				redraw();
 
-				ArrayList<SSArea> SliceAreaList = new ArrayList<SSArea>();
-				for(double ZLevel = MyConfig.FirstLayer;ZLevel<(STLFile.bz2-MyConfig.FirstLayer);ZLevel+=MyConfig.LayerThickness){//slice at the center of the layer
-					Slice ThisSlice;
-					ThisSlice = new Slice(thisapplet, STLFile, ZLevel);
-					int SliceNum = (int) Math.round(ZLevel / MyConfig.LayerThickness);
-					SSArea thisArea = new SSArea();
-					thisArea.setGridScale(0.01);
+				ArrayList<Slice> SliceList = new ArrayList<SSArea>();
+				for(double ZLevel = MyConfig.FirstLayer;ZLevel<STLFile.bz2;ZLevel+=MyConfig.LayerThickness){//slice at the center of the layer
+					Slice ThisSlice = new Slice(thisapplet, STLFile, ZLevel);
+					//int SliceNum = (int) Math.floor(ZLevel / MyConfig.LayerThickness);
+					//SSArea thisArea = new SSArea();
+					//thisArea.setGridScale(0.01);
 					if(debugFlag) println("\n	GridScale: "+thisArea.GridScale);
-					thisArea.Slice2Area(ThisSlice);
-					SliceAreaList.add(SliceNum, thisArea);
+					//thisArea.Slice2Area(ThisSlice);
+					SliceList.add(ThisSlice);
+					FileWriteFraction=.1+(ZLevel/(STLFile.bz2-MyConfig.FirstLayer))/10.;
+					redraw(); 
 				}
 				FileWriteFraction=(float) 0.2;
 				redraw();
 				ArrayList<SSArea> ShellAreaList = new ArrayList<SSArea>();
-				for(int ShellNum=0; ShellNum < SliceAreaList.size(); ShellNum++) {
-					SSArea thisArea = (SSArea) SliceAreaList.get(ShellNum);
+				for(int ShellNum=0; ShellNum < SliceList.size(); ShellNum++) {
+					SSArea thisArea = SliceList.get(ShellNum);
 					SSArea thisShell = new SSArea();
 					thisShell.setGridScale(thisArea.getGridScale());
 					thisShell.add(thisArea);
-					thisShell.makeShell(0.25,8);
+					thisShell.makeShell(MyConfig.XYExtrusionThickness,MyConfig.ShellThickness,8);
 					SSArea thisSubArea = new SSArea();
 					thisSubArea.setGridScale(thisArea.getGridScale());
 					thisSubArea.add(thisArea);
@@ -338,12 +348,12 @@ public class SuperSkein extends PApplet {
 				}
 				FileWriteFraction=(float) 0.3;
 				redraw();
-				Fill areaFill=new Fill(true,(int)Math.round(MyConfig.BuildPlatformWidth),(int)Math.round(MyConfig.BuildPlatformHeight),0.2);
+				Fill areaFill=new Fill(true,(int)Math.floor(MyConfig.BuildPlatformWidth),(int)Math.floor(MyConfig.BuildPlatformHeight),0.2);
 				ArrayList<SSArea> FillAreaList = areaFill.GenerateFill(ShellAreaList);
 
 				FileWriteFraction=(float) 0.5;
 				redraw();
-				AreaWriter gcodeOut = new AreaWriter(thisapplet, debugFlag,(int)Math.round(MyConfig.BuildPlatformWidth),(int)Math.round(MyConfig.BuildPlatformHeight));
+				AreaWriter gcodeOut = new AreaWriter(thisapplet, debugFlag,(int)Math.floor(MyConfig.BuildPlatformWidth),(int)Math.floor(MyConfig.BuildPlatformHeight));
 				gcodeOut.setOperatingTemp(MyConfig.OperatingTemp);
 				gcodeOut.setFlowRate(MyConfig.ServoFlowRate);
 				gcodeOut.setLayerThickness(MyConfig.LayerThickness);
@@ -407,11 +417,11 @@ public class SuperSkein extends PApplet {
 				redraw();
 				ArrayList<SSArea> SliceAreaList = new ArrayList<SSArea>();
 				int SliceNum;
-				for(double ZLevel = MyConfig.FirstLayer;ZLevel<(STLFile.bz2-MyConfig.FirstLayer);ZLevel=ZLevel+MyConfig.LayerThickness){
+				for(double ZLevel = MyConfig.FirstLayer;ZLevel<STLFile.bz2;ZLevel+=MyConfig.LayerThickness){
 					Slice ThisSlice;
 					ThisSlice = new Slice(thisapplet, STLFile,ZLevel);
 					//will abort if there is an error
-					SliceNum = (int)Math.round(ZLevel / MyConfig.LayerThickness);
+					SliceNum = (int)Math.floor(ZLevel / (MyConfig.LayerThickness-MyConfig.FirstLayer));
 					SSArea thisArea = new SSArea();
 					thisArea.setGridScale(0.01);
 					if(debugFlag) println("\n	GridScale: "+thisArea.GridScale);
@@ -445,14 +455,14 @@ public class SuperSkein extends PApplet {
 
 				DXFWriteFraction=0.4;
 				redraw();
-				Fill areaFill = new Fill(true,Math.round(MyConfig.BuildPlatformWidth),Math.round(MyConfig.BuildPlatformHeight),0.2);
+				Fill areaFill = new Fill(true,(int)Math.floor(MyConfig.BuildPlatformWidth),(int)Math.floor(MyConfig.BuildPlatformHeight),0.2);
 				ArrayList<SSArea> FillAreaList = areaFill.GenerateFill(SliceAreaList);
 
 				DXFWriteFraction=0.5;
 				redraw();
 				DXFSliceFileName = DXFSliceFilePrefix + "_slices_" + MyConfig.LayerThickness + ".dxf";
 				print("DXF Slice File Name: " + DXFSliceFileName + "\n");
-				AreaWriter dxfOut = new AreaWriter(thisapplet, false,Math.round(MyConfig.BuildPlatformWidth),Math.round(MyConfig.BuildPlatformHeight));
+				AreaWriter dxfOut = new AreaWriter(thisapplet, false,(int)Math.floor(MyConfig.BuildPlatformWidth),(int)Math.floor(MyConfig.BuildPlatformHeight));
 				dxfOut.ArrayList2DXF(DXFSliceFileName,SliceAreaList);
 
 				DXFWriteFraction=(float) 0.6;

@@ -3,7 +3,7 @@ import java.awt.geom.Path2D;
 
 import processing.core.PVector;
 
-class SSPath extends Path2D.Float {
+class SSPath extends Path2D.Double {
 
 	/**
 	 * 
@@ -46,9 +46,8 @@ class SSPath extends Path2D.Float {
 	// If the point is inside the closed path, returns true.	False otherwise.
 	// If the path is not closed, then returns false.
 	boolean containsPoint(PVector testpoint){
-		return( super.contains(testpoint.x,testpoint.y));
+		return super.contains(testpoint.x,testpoint.y);
 	}
-
 	// If the point is inside the closed path, returns true.	False otherwise.
 	// If the path is not closed, then returns false.
 	boolean containsPoint(double X, double Y){
