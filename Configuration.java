@@ -16,23 +16,23 @@ class Configuration {
 	public String FileName;
 	
 	public double PreScale, XRotate, PrintFeedrate, OrbitalFeedrate;
-	public double LayerThickness, XYExtrusionThickness, Sink, FirstLayer;
-	public int BuildPlatformWidth, BuildPlatformHeight, OperatingTemp; 
-	public double StepperFlowRate, BridgeFeedrateModifier;
-	public int ServoFlowRate;
+	public double Sink, FirstLayer;
+	public int BuildPlatformWidth, BuildPlatformHeight; 
+	public double BridgeFeedrateModifier;
+	public Extruder extruder; 
 	public int Percision; 
 	private PApplet applet;
 
-	public double RetractDistance;
 	public double BacklashX, BacklashY, BacklashZ; 
-	public enum ToolType { Servo, Stepper };
-	ToolType Tool; 
+ 
 	public int ShellThickness; 
 	public double InFill;
 	public double SupportDegree; 
 	public boolean AddSupport; 
+	public double MachinePercision; //this is the so called "grid scale"
 	//config values of last resort
 	Configuration(PApplet app) {
+		MachinePercision = 0.01; //1/100th mm percision, Z is naturally much higher
 		Percision = 4; 
 		applet = app; 
 		PreScale = 1.0;
@@ -40,19 +40,14 @@ class Configuration {
 		FileName="";	
 		PrintFeedrate = 1000;
 		OrbitalFeedrate = 2000; 
-		LayerThickness = 0.27;
-		Sink = 0;
-		OperatingTemp = 200;
-		ServoFlowRate = 180;	
-		StepperFlowRate = 200; 
-		FirstLayer = LayerThickness/2.; //start slicing in the middle of the layer
+		extruder = new Extruder(0.27, 0.28, 0.35);
+		Sink = 0; 
+		FirstLayer = extruder.ZThickness/2.; //start slicing in the middle of the layer
 		BuildPlatformWidth = 100; 
 		BuildPlatformHeight = 100; 
 		BacklashX = BacklashY = BacklashZ = 0; 
-		RetractDistance = 0;
-		Tool = ToolType.Stepper; 
+		
 		ShellThickness = 2; 
-		XYExtrusionThickness = .27; 
 		InFill = 0.3; 
 		SupportDegree = 0.35; 
 		BridgeFeedrateModifier = 1.4; 
@@ -62,23 +57,25 @@ class Configuration {
 	void Load(){
 		String[] input = applet.loadStrings("config.txt");
 		int index = 0;
+		
 		for(index = 0; index < input.length; index++) {
 			String[] pieces = PApplet.split(input[index], ' ');
+			if(pieces.length == 1){//switch modes
+				if(pieces[0].equals("[MATERIAL]")) index = extruder.Filament.parse(input, index); 
+				if(pieces[0].equals("[TOOL]")) index = extruder.parse(input, index);
+				if(pieces[0].equals("[MACHINE]")); //continue
+			}
 			if (pieces.length == 2){
 				if(pieces[0].equals("STL_FILE")) FileName=pieces[1];	
-				if(pieces[0].equals("PARAMETER_PERCISION")) Percision=Math.min(15, Math.max(0,Integer.parseInt(pieces[1])));
-				if(pieces[0].equals("OPERATING_TEMPERATURE")) OperatingTemp=Integer.parseInt(pieces[1]);	
-				if(pieces[0].equals("TOOL_TYPE")) Tool = ToolType.valueOf(pieces[1]); 
-				if(pieces[0].equals("RETRACT_DISTANCE")) RetractDistance=Double.parseDouble(pieces[1]); 
-				if(pieces[0].equals("PRINT_FEEDRATE")) PrintFeedrate=Double.parseDouble(pieces[1]);	
-				if(pieces[0].equals("ORBITAL_FEEDRATE")) OrbitalFeedrate=Double.parseDouble(pieces[1]); 
+				if(pieces[0].equals("MACHINE_PERCISION")) MachinePercision = Math.abs(Double.parseDouble(pieces[1]));
+				if(pieces[0].equals("PARAMETER_PERCISION")) Percision = Math.min(15, Math.max(0,Integer.parseInt(pieces[1])));
+				if(pieces[0].equals("PRINT_FEEDRATE")) PrintFeedrate = Double.parseDouble(pieces[1]);	
+				if(pieces[0].equals("ORBITAL_FEEDRATE")) OrbitalFeedrate = Double.parseDouble(pieces[1]); 
 				if(pieces[0].equals("BRIDGE_FEEDRATE_MODIFIER")) BridgeFeedrateModifier = Double.parseDouble(pieces[1]); 
-				if(pieces[0].equals("SHELL_THICKNESS")) ShellThickness = Integer.parseInt(pieces[1]); 
-				if(pieces[0].equals("LAYER_XYEXTRUSION")) XYExtrusionThickness = Double.parseDouble(pieces[1]); 
-				if(pieces[0].equals("LAYER_THICKNESS")) LayerThickness=Double.parseDouble(pieces[1]);	
-				if(pieces[0].equals("FIRST_LAYER_HEIGHT")) FirstLayer=Double.parseDouble(pieces[1]);
+				if(pieces[0].equals("FIRST_LAYER_HEIGHT")) FirstLayer = Double.parseDouble(pieces[1]);
 				if(pieces[0].equals("ADD_SUPPORT_DEGREE")) SupportDegree = Double.parseDouble(pieces[1])/100.; 
 				
+				if(pieces[0].equals("SHELL_THICKNESS")) ShellThickness = Integer.parseInt(pieces[1]); 
 				if(pieces[0].equals("ADD_SUPPORT")) AddSupport = Boolean.parseBoolean(pieces[1]); 
 				if(pieces[0].equals("INFILL")) InFill = Double.parseDouble(pieces[1])/100.;
 				if(pieces[0].equals("SCALE")) PreScale=Double.parseDouble(pieces[1]);	
@@ -90,10 +87,6 @@ class Configuration {
 				if(pieces[0].equals("BUILD_PLATFORM")){
 					BuildPlatformWidth = Integer.parseInt(pieces[1]);
 					BuildPlatformHeight = Integer.parseInt(pieces[2]);
-				}
-				if(pieces[0].equals("FLOWRATE")){
-					ServoFlowRate=Integer.parseInt(pieces[1]);	
-					StepperFlowRate=Double.parseDouble(pieces[2]); 
 				}
 			}
 			if(pieces.length == 4){
@@ -108,20 +101,20 @@ class Configuration {
 	
 	void Save(){
 		PrintWriter output = applet.createWriter("config.txt");
+		output.println("[MACHINE]");
 		output.printf("STL_FILE %s\n", FileName);
+		output.printf("MACHINE_PERCISION %."+Percision+"f\n", MachinePercision); 
 		output.printf("PARAMETER_PERCISION %d\n", Percision); 
 		output.printf("BUILD_PLATFORM %d %d\n", BuildPlatformWidth, BuildPlatformHeight);
-		output.printf("OPERATING_TEMPERATURE %d\n", OperatingTemp);
-		output.printf("TOOL_TYPE %s\n", Tool.name());
-		output.printf("FLOWRATE %d %."+Percision+"f\n", ServoFlowRate, StepperFlowRate);
-		output.printf("RETRACT_DISTANCE %."+Percision+"f\n", RetractDistance); 
+		//output.printf("OPERATING_TEMPERATURE %d\n", OperatingTemp);
+		//output.printf("TOOL_TYPE %s\n", Tool.name());
 		output.printf("PRINT_FEEDRATE %." + Percision + "f\n", PrintFeedrate);
 		output.printf("ORBITAL_FEEDRATE %."+Percision+"f\n", OrbitalFeedrate); 
 		output.printf("BRIDGE_FEEDRATE_MODIFIER %."+Percision+"f\n", BridgeFeedrateModifier);
 		output.printf("BACKLASH %."+Percision+"f %."+Percision+"f %."+Percision+"f\n", BacklashX, BacklashY, BacklashZ);
 		output.printf("SHELL_THICKNESS %d\n", ShellThickness); 
-		output.printf("LAYER_XYEXTRUSION %."+Percision+"4f\n", XYExtrusionThickness); 
-		output.printf("LAYER_THICKNESS %." + Percision + "f\n", LayerThickness);
+		//output.printf("LAYER_XYEXTRUSION %."+Percision+"4f\n", XYExtrusionThickness); 
+		//output.printf("LAYER_THICKNESS %." + Percision + "f\n", LayerThickness);
 		output.printf("FIRST_LAYER_HEIGHT %." + Percision + "f\n", FirstLayer); 
 		output.printf("ADD_SUPPORT_DEGREE %."+ Percision + "f\n\n", SupportDegree*100); 
 		
@@ -129,8 +122,9 @@ class Configuration {
 		output.printf("INFILL %."+Percision+"f\n", InFill*100);
 		output.printf("SCALE %."+ Percision +"f\n", PreScale);
 		output.printf("X_ROTATE %."+ Percision +"f\n", XRotate);
-		output.printf("SINK %." + Percision + "f\n", Sink);
-		
+		output.printf("SINK %." + Percision + "f\n\n", Sink);
+		output.println(extruder.getParameters(Percision));
+		output.println(extruder.Filament.getParameters(Percision));
 		output.flush();
 		output.close();
 	}

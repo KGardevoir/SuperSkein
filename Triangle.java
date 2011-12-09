@@ -103,7 +103,7 @@ class Triangle {
 	//out what kind of intersections the triangle
 	//makes with the plane, if any.	Returns
 	//null if the triangle does not intersect.
-	SSLine GetZIntersect(double ZLevel){
+	SSLine GetZIntersect(Configuration config, double ZLevel){
 		SSLine Intersect;
 		double xa,xb,ya,yb;
 		if(z1<ZLevel){
@@ -117,7 +117,7 @@ class Triangle {
 					xb = x2 + (x3-x2)*(ZLevel-z2)/(z3-z2);
 					yb = y2 + (y3-y2)*(ZLevel-z2)/(z3-z2);					
 				}
-				Intersect = new SSLine(xa,ya,xb,yb);
+				Intersect = new SSLine(config, xa,ya,xb,yb);
 				return Intersect;
 			} else {
 				if(z3>ZLevel){
@@ -126,7 +126,7 @@ class Triangle {
 					xb = x2 + (x3-x2)*(ZLevel-z2)/(z3-z2);
 					yb = y2 + (y3-y2)*(ZLevel-z2)/(z3-z2);
 				
-					Intersect = new SSLine(xa,ya,xb,yb);
+					Intersect = new SSLine(config, xa,ya,xb,yb);
 					return Intersect;
 				} else return null;
 			}

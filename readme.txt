@@ -1,3 +1,9 @@
+Compiling
+1) Install eclipse for java
+2) add .jar's to external libraries (build will take place automatically)
+3) run, load one of the stl's in the data folder (not the font), or one of your own. 
+*other method's (using javac) should exist for compiling, but I am not aware of the details of how to do this. Feel free to try and inform me of the details. 
+
 SuperSkein has apparently become orphaned, which is a shame, since its much faster (and in my opinion), better implementation of a slicer. 
 I will work hard to make this a comperable, faster alternative to SFACT, alot of bugs need to be fixed first (like not slicing one of the included sample files), but once thats done the following need to be accomplished: 
 *Complete reverse engineering and internal restructuring, make things faster by optimizing various components. 
@@ -26,8 +32,6 @@ DONE:
 TODO: 
 *See first stared section
 *Better GUI
-
-
 
 SuperSkein Manual
 

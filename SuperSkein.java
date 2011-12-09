@@ -1,5 +1,10 @@
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
+import java.awt.geom.PathIterator;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
+
 import processing.core.*; 
 
 public class SuperSkein extends PApplet {
@@ -9,7 +14,7 @@ public class SuperSkein extends PApplet {
 	private static final long serialVersionUID = 3965090328975349612L;
 	SuperSkein thisapplet = this; 
 	public static void main(String args[]) {
-		PApplet.main(new String[] { "--present", "SuperSkein" });
+		PApplet.main(new String[] { PApplet.ARGS_PRESENT, "SuperSkein" });
 	}
 	//The config file takes precedence over these parameters!
 	
@@ -60,7 +65,6 @@ public class SuperSkein extends PApplet {
 	double DXFWriteFraction = 0;
 	double FileWriteFraction = 0;
 	double STLLoadFraction = 0;
-
 	//Flags
 	boolean STLLoadedFlag = false;
 	boolean FileWrittenFlag = false;
@@ -77,7 +81,7 @@ public class SuperSkein extends PApplet {
 	GUIProgressBar STLLoadProgress, FileWriteProgress, DXFWriteProgress;
 	GUITextBox STLName;
 	GUIFloatBox STLScale, STLXRotate;
-
+	GUICheckBox useRealLayers; 
 	//Page 1 GUI Widgets
 	VScrollbar layerHeight; 
 	//AllPage GUI Widgets
@@ -88,22 +92,22 @@ public class SuperSkein extends PApplet {
 //		if(DXFExportMode != 0) size(AppWidth,AppHeight,P3D);
 //		if(DXFExportMode == 0) size(AppWidth,AppHeight,JAVA2D);
 		STLLoadButton = new GUI(thisapplet,10,125,100,15, "Load STL");
-		STLLoadProgress = new GUIProgressBar(thisapplet, 120,125,370,15);
+		STLLoadProgress = new GUIProgressBar(thisapplet, 120,125,AppWidth-130,15);
 		
 		FileWriteButton = new GUI(thisapplet, 10,150,100,15, "Write GCode");
-		FileWriteProgress = new GUIProgressBar(thisapplet, 120,150,370,15);
+		FileWriteProgress = new GUIProgressBar(thisapplet, 120,150,AppWidth-130,15);
 		
 		DXFWriteButton = new GUI(thisapplet, 10,175,100,15, "Write DXF Slices");
-		DXFWriteProgress = new GUIProgressBar(thisapplet, 120,175,370,15);
+		DXFWriteProgress = new GUIProgressBar(thisapplet, 120,175,AppWidth-130,15);
 		
-		STLName = new GUITextBox(thisapplet, 120,25,370,15,"sculpt_dragon.stl");
+		STLName = new GUITextBox(thisapplet, 120,25,AppWidth-130,15,"sculpt_dragon.stl");
 		STLScale = new GUIFloatBox(thisapplet, 120,50,100,15, "1.0");
-		STLXRotate = new GUIFloatBox(thisapplet, 390,50,100,15, "0.0");
+		STLXRotate = new GUIFloatBox(thisapplet, AppWidth-130,50,100,15, "0.0");
 		
 		layerHeight = new VScrollbar(thisapplet, 0, 0, 10, AppHeight, 10); 
 		RightButton = new GUI(thisapplet, AppWidth-90,AppHeight-20,80,15, "Right");
 		LeftButton = new GUI(thisapplet, 10,AppHeight-20,80,15, "Left");
-		
+		useRealLayers = new GUICheckBox(thisapplet, 10, 200, true, "Use Real Slices?");
 		size(AppWidth,AppHeight,P2D);
 
 		Slice = new ArrayList<Slice>();
@@ -144,9 +148,18 @@ public class SuperSkein extends PApplet {
 		
 
 		//GUI Pages
-
+		RightButton.x = this.width-90; 
+		RightButton.y = this.height-20; 
+		LeftButton.y = this.height-20;
 		//Interface Page
 		if(GUIPage == 0){
+			STLLoadProgress.w = this.width - 130; 
+			FileWriteProgress.w = this.width - 130; 
+			DXFWriteProgress.w = this.width - 130;  
+
+			STLName.w = this.width - 130;
+			STLXRotate.x = this.width - 130; 
+			
 			textAlign(CENTER);
 			textFont(font);
 			textMode(SCREEN);
@@ -159,10 +172,10 @@ public class SuperSkein extends PApplet {
 			text("Scale Factor",10,62);
 			STLScale.display();
 			
-			text("X-Rotation",300,62);
+			text("X-Rotation",this.width - 200,62);
 			STLXRotate.display();
 
-			
+			useRealLayers.display(); 
 			if(DXFExportMode != 0) DXFWriteProgress.update(DXFWriteFraction);
 			if(DXFExportMode != 0) DXFWriteButton.display();
 			if(DXFExportMode != 0) DXFWriteProgress.display();
@@ -177,15 +190,22 @@ public class SuperSkein extends PApplet {
 		//MeshMRI
 		//Only relates to the final gcode in that
 		//it shows you 2D sections of the mesh.
-		if(GUIPage==1){
-			layerHeight.display(mousePressed); 
-			textAlign(CENTER);
+		if(GUIPage == 1){
 			textFont(font);
 			textMode(SCREEN);
 			fill(255);
-			text("MeshMRI",width/2,15);
+			textAlign(RIGHT); 
+			if(useRealLayers.checked) text("Slice Number: " + (int)Math.floor((1.-layerHeight.getPos())*(Slice.size()-1)), width, 15);
+			else text("Z-Height: " +  String.format("%."+MyConfig.Percision+"f", MeshHeight*(1.-layerHeight.getPos())+STLFile.bz1) + " mm", width, 15);
+			DisplayScale = Math.min(this.width/MyConfig.BuildPlatformWidth, this.height/MyConfig.BuildPlatformHeight);
+			layerHeight.setScrollHeight(this.height);
+			
+			textAlign(CENTER);
+			fill(255); 
+			
+			if(useRealLayers.checked) text("SliceMRI",width/2,15);
+			else text("MeshMRI", width/2, 15); 
 
-			SSLine Intersection;
 			//Slice = new ArrayList<Slice>();
 			//Draw the grid
 			stroke(80);
@@ -196,17 +216,76 @@ public class SuperSkein extends PApplet {
 			if(STLLoadedFlag){
 				stroke(255);
 				strokeWeight(2);
-				//double scale = Math.min(BuildPlatformWidth/(STLFile.bx2-STLFile.bx1),BuildPlatformHeight/(STLFile.by2-STLFile.by1));
-				for(int i = 0; i <STLFile.Triangles.size(); i++){
-					Triangle tri = (Triangle) STLFile.Triangles.get(i);
-					if((Intersection = tri.GetZIntersect(MeshHeight*(1.-layerHeight.getPos())+STLFile.bz1)) != null){
-						Intersection.Scale(DisplayScale);
-						Intersection.Rotate(PI);
-						Intersection.Translate(MyConfig.BuildPlatformWidth*DisplayScale/2, MyConfig.BuildPlatformHeight*DisplayScale/2);				
-						line(Intersection.x1,Intersection.y1,Intersection.x2,Intersection.y2);
+				if(!useRealLayers.checked){
+					SSLine Intersection;
+					for(int i = 0; i < STLFile.Triangles.size(); i++){
+						Triangle tri = STLFile.Triangles.get(i);
+						if((Intersection = tri.GetZIntersect(MyConfig, MeshHeight*(1.-layerHeight.getPos())+STLFile.bz1)) != null){
+							Intersection.Scale(DisplayScale);
+							Intersection.Rotate(PI);
+							Intersection.Translate(MyConfig.BuildPlatformWidth*DisplayScale/2, MyConfig.BuildPlatformHeight*DisplayScale/2);				
+							line(Intersection.x1,Intersection.y1,Intersection.x2,Intersection.y2);
+						}
+					}//slice the mesh correctly and draw profile
+				} else {//XXX use real slices
+					redraw(); 
+					SSPath cslice = Slice.get(Math.min(Slice.size()-1, Math.max(0, (int)Math.floor((1.-layerHeight.getPos())*(Slice.size()-1))))).slice.flatten(MyConfig); 
+					PathIterator iter = cslice.getPathIterator(new AffineTransform()); 
+					pushMatrix(); 
+					translate(MyConfig.BuildPlatformWidth/2*DisplayScale, MyConfig.BuildPlatformHeight/2*DisplayScale);
+					scale(DisplayScale);
+					rotate((float) Math.PI);
+					fill(204, 102, 0);
+					//ellipse(pp[0], pp[1], 5/DisplayScale, 5/DisplayScale);
+					noFill(); 
+					double[][] p = /*{{0,10},{10,-10},{-10,-10}};*/new double[3][6]; double[][] fp = new double[3][2]; 
+					/*triangle(p[0][0], p[0][1], p[1][0], p[1][1], p[2][0], p[2][1]);
+					float[] n = perpV(p[0], p[1], p[2]); 
+					line(p[1][0],p[1][1], p[1][0] + n[0]*10, p[1][1] + n[1]*10);*/
+					line(p[0][0], p[0][1], p[1][0], p[1][1]);
+					line(p[2][0], p[2][1], p[0][0], p[0][1]); 
+					
+					for(; !iter.isDone(); iter.next()){
+						int type = iter.currentSegment(p[2]);
+						if(type == PathIterator.SEG_MOVETO){//TODO handle if path is not a complete object with n>3 vertexes
+							iter.currentSegment(p[0]); 
+							iter.next(); 
+							iter.currentSegment(p[1]); //we have to flush the other two points...
+							iter.next(); 
+							iter.currentSegment(p[2]); 
+							fp[0][0] = p[0][0]; 
+							fp[0][1] = p[0][1];
+							fp[1][0] = p[1][0]; 
+							fp[1][1] = p[1][1]; 
+							line(p[0][0], p[0][1], p[1][0], p[1][1]);
+						} else if(type == PathIterator.SEG_CLOSE) {
+							p[2][0] = fp[0][0]; 
+							p[2][1] = fp[0][1]; 
+							line(p[1][0], p[1][1], p[2][0], p[2][1]); 
+							double[] v = perpV(p[0],p[1],p[2]); 
+							line(p[1][0], p[1][1], p[1][0] + v[0],p[1][1] + v[1]);
+							//line(p[1][0], p[1][1], p[1][0] + -v[0],p[1][1] + -v[1]);
+							p[0][0] = fp[1][0]; 
+							p[0][1] = fp[1][1]; 
+							v = perpV(p[1], p[2], p[0]); 
+							line(p[2][0], p[2][1], p[2][0] + v[0],p[2][1] + v[1]);
+							//line(p[2][0], p[2][1], p[2][0] + -v[0],p[2][1] + -v[1]);
+							continue; 
+						}
+						double[] v = perpV(p[0],p[1], p[2]); 
+						line(p[1][0], p[1][1], p[2][0], p[2][1]); 
+						line(p[1][0], p[1][1], p[1][0] + v[0],p[1][1] + v[1]);
+						//line(p[1][0], p[1][1], p[1][0] - v[0],p[1][1] - v[1]);
+						p[0][0] = p[1][0]; //shift parameters down
+						p[0][1] = p[1][1]; 
+						p[1][0] = p[2][0]; 
+						p[1][1] = p[2][1]; 
 					}
-				}//slice the mesh correctly and draw profile
+					popMatrix(); 
+				}
 			} else text("STL File Not Loaded",width/2,height/2);
+			strokeWeight(1);
+			layerHeight.display(mousePressed); 
 		}
 		if( GUIPage != 2 ) {
 			//Always On Top, so last in order
@@ -214,20 +293,89 @@ public class SuperSkein extends PApplet {
 			RightButton.display();
 		}
 	}
-
+	final public double root2 = Math.sqrt(2); 
+	double mag(double[] a, double[] b){//length relative to b (or a, depending on perspective)
+		double ma = a[0]-b[0]; 
+		double mb = a[1]-b[1];  
+		return Math.sqrt(ma*ma+mb*mb); 
+	}
+	double mag(double[] v){ return Math.sqrt(v[0]*v[0]+v[1]*v[1]); }
+	double dot(double[] u, double[]v){ return u[0]*v[0]+u[1]*v[1]; }
+	float mag(float[] v){ return (float) Math.sqrt(v[0]*v[0]+v[1]*v[1]); }
+	float dot(float[] u, float[]v){ return u[0]*v[0]+u[1]*v[1]; }
+	double[] perpV(double[] a, double[] b, double[] c){
+		double[] u = {c[0] - b[0], c[1] - b[1]}; 
+		double[] v = {a[0] - b[0], a[1] - b[1]}; 
+		double[] w = {a[0] - c[0], a[1] - c[1]};
+		double mu = mag(u), mv = mag(v);//, mw = mag(w); 
+		/*if(dot(u,v)/(mu*mv) <= 1/root2){
+			double[] pv = {-w[1], w[0]}; 
+			double mpv = mag(pv); 
+			pv[0] /= mpv; 
+			pv[1] /= mpv;
+			return pv;
+		} else*/ {
+			double[] vp2w = {u[0] + w[0]/2, u[1] + w[1]/2}; 
+			double mvp2w = mag(vp2w); 
+			vp2w[0] /= mvp2w;
+			vp2w[1] /= mvp2w; 
+			return vp2w; 
+		}
+	}/*
+	float[] perpV(float[] a, float[] b, float[] c){
+		float[] u = {c[0] - b[0], c[1] - b[1]}; 
+		float[] v = {a[0] - b[0], a[1] - b[1]}; 
+		float[] w = {a[0] - c[0], a[1] - c[1]};
+		float mu = mag(u), mv = mag(v);//, mw = mag(w); 
+		if(dot(u,v)/(mu*mv) <= 1/root2){
+			float[] pv = {-w[1], w[0]}; 
+			float mpv = mag(pv); 
+			pv[0] /= mpv; 
+			pv[1] /= mpv;
+			return pv;
+		} else {
+			float[] vp2w = {u[0] + w[0]/2, u[1] + w[1]/2}; 
+			float mvp2w = mag(vp2w); 
+			vp2w[0] /= mvp2w;
+			vp2w[1] /= mvp2w; 
+			return vp2w; 
+		}
+	}*/
+	/*double[] cornerV(double[] a, double[] b, double[] c){//vectors
+		//double mu = mag(c, b), mw = mag(a, c);// mc = mag(c, a); 
+		double[] u = {c[0] - b[0], c[1] - b[1]}; 
+		double[] w = {a[0] - c[0], a[1] - c[1]}; 
+		//double x = Math.acos((ma*ma-mb*mb+mc*mc)/(2*ma*mc)) + Math.acos((a[0]-b[0])/ma);//TODO finish, this should be the correct ray, but we need to optimize
+		
+		double[] v = {u[0] + w[0]/2., u[1] + w[1]/2.};
+		double mv = mag(v);
+		v[0] /= mv; 
+		v[1] /= mv; 
+		//double[] v = {Math.sqrt(1-(x*x)/(s*s)), x/s}; 
+		//System.out.println(x*180./Math.PI); 
+		return v; 
+	}*/
+	double areaA(double[] a, double[] b, double[] c){//heron's theorem
+		double ma = mag(a, b), mb = mag(b, c), mc = mag(c, a), s; 
+		s = (ma+mb+mc)/2; 
+		return Math.sqrt(s*(s-ma)*(s-mb)*(s-mc));  
+	}
 	private void line(double x1, double y1, double x2, double y2) {
 		line((float)x1,(float)y1,(float)x2,(float)y2);
 	}
 
 	//Save file on click
 	public void mousePressed(){
-		if( (DXFExportMode != 0) && ((DXFWriteButton.over(mouseX,mouseY)) & GUIPage == 0) ) DXFWriteTrigger = true;
-		if( (FileWriteButton.over(mouseX,mouseY)) & GUIPage==0) FileWriteTrigger = true;
-		if( (STLLoadButton.over(mouseX,mouseY)) & GUIPage==0) STLLoadTrigger = true;
-		if(GUIPage == 0) STLName.checkFocus(mouseX,mouseY);
-		if(GUIPage == 0) STLScale.checkFocus(mouseX,mouseY);
-		if(GUIPage == 0) STLXRotate.checkFocus(mouseX,mouseY);
-		
+		if(GUIPage == 0){
+			if( (DXFExportMode != 0) && DXFWriteButton.over(mouseX,mouseY)) DXFWriteTrigger = true;
+			if( FileWriteButton.over(mouseX,mouseY)) FileWriteTrigger = true;
+			if( STLLoadButton.over(mouseX,mouseY)) STLLoadTrigger = true;
+			if( useRealLayers.over(mouseX, mouseY)) useRealLayers.toggle(); 
+			STLName.checkFocus(mouseX,mouseY);
+			STLScale.checkFocus(mouseX,mouseY);
+			STLXRotate.checkFocus(mouseX,mouseY);
+		}
+
 		//if(GUIPage == 1) layerHeight.update(mouseX, mouseY, true); 
 		
 		if( LeftButton.over(mouseX,mouseY) ) GUIPage--;
@@ -245,18 +393,20 @@ public class SuperSkein extends PApplet {
 	}
 
 	public void mouseMoved(){
-		if(GUIPage == 1) redraw();
+		 redraw();
 	}
 
 	public void mouseReleased(){
-		if(GUIPage == 1) redraw(); 
+		redraw(); 
 	}
 
 
 	public void keyTyped(){
-		if(GUIPage == 0) STLName.doKeystroke(key);
-		if(GUIPage == 0) STLScale.doKeystroke(key);
-		if(GUIPage == 0) STLXRotate.doKeystroke(key);	
+		if(GUIPage == 0){
+			STLName.doKeystroke(key);
+			STLScale.doKeystroke(key);
+			STLXRotate.doKeystroke(key);
+		}
 		redraw();
 	}
 
@@ -269,28 +419,40 @@ public class SuperSkein extends PApplet {
 				STLLoadProgress.message("STL Load May Take a Minute or more...");
 				String newName=selectInput("Select STL to Load");
 				
-				if(newName!=null) STLName.Text=newName;
-				else { 
-					println("No STL File selected. Aborting");
-				}
-				
-				STLFile = new Mesh(thisapplet, STLName.Text);
+				if(newName != null){
+					STLName.Text=newName;
+					STLFile = new Mesh(thisapplet, STLName.Text);
 
-				//Scale and locate the mesh
-				//These will do nothing if these methods return NaN
-				STLFile.Scale(STLScale.getFloat());
-				STLFile.RotateX(STLXRotate.getFloat()*180/PI);
-				//Put the mesh in the middle of the platform:
-				STLFile.Translate(-STLFile.bx1,-STLFile.by1,-STLFile.bz1);
-				STLFile.Translate(-STLFile.bx2/2,-STLFile.by2/2,0);
-				//STLFile.Translate(0,0,-MyConfig.LayerThickness);	
-				STLFile.Translate(0,0,-MyConfig.Sink);
-				MeshHeight = STLFile.bz2-STLFile.bz1;
-				STLLoadFraction = 1.1;
-				STLLoadedFlag = true;
-				System.out.println("MeshHeight = " + MeshHeight);
-				System.out.println("Number of Slices: " + Math.floor(MeshHeight)/MyConfig.LayerThickness);
-				redraw();
+					//Scale and locate the mesh
+					//These will do nothing if these methods return NaN
+					STLFile.Scale(STLScale.getFloat());
+					STLFile.RotateX(STLXRotate.getFloat()*180/PI);
+					//Put the mesh in the middle of the platform:
+					STLFile.Translate(-STLFile.bx1,-STLFile.by1,-STLFile.bz1);
+					STLFile.Translate(-STLFile.bx2/2, -STLFile.by2/2, 0);
+					//STLFile.Translate(0,0,-MyConfig.LayerThickness);	
+					STLFile.Translate(0,0,-MyConfig.Sink);
+					MeshHeight = STLFile.bz2-STLFile.bz1;
+					STLLoadedFlag = true;
+					//XXX now slice mesh so the preview means more (and are tremendously more useful). 
+					Slice.clear(); 
+					for(double ZLevel = MyConfig.FirstLayer;ZLevel < STLFile.bz2; ZLevel+=MyConfig.extruder.ZThickness){//slice at the center of the layer
+						//int SliceNum = (int) Math.floor((ZLevel-MyConfig.FirstLayer)/MyConfig.extruder.ZThickness);
+						//SSArea thisArea = new SSArea(MyConfig);
+						if(debugFlag) println("\n	GridScale: "+MyConfig.MachinePercision);
+						//thisArea.Slice2Area(ThisSlice);
+						Slice.add(new Slice(thisapplet, MyConfig, STLFile, ZLevel));
+						STLLoadFraction = .5 + ((ZLevel-MyConfig.FirstLayer)/(STLFile.bz2-MyConfig.FirstLayer))/2.; 
+						redraw(); 
+					}
+					STLLoadFraction = 1.1;
+					System.out.println("MeshHeight = " + MeshHeight);
+					System.out.println("Number of Slices: " + (int)Math.floor((MeshHeight-MyConfig.FirstLayer)/MyConfig.extruder.ZThickness));
+					redraw();
+				} else println("No STL File selected. Aborting");
+				
+				
+
 			}
 		}
 	}
@@ -311,42 +473,41 @@ public class SuperSkein extends PApplet {
 				redraw();
 
 				ArrayList<SSArea> SliceAreaList = new ArrayList<SSArea>();
-				for(double ZLevel = MyConfig.FirstLayer;ZLevel<(STLFile.bz2-MyConfig.FirstLayer);ZLevel+=MyConfig.LayerThickness){//slice at the center of the layer
+				for(double ZLevel = MyConfig.FirstLayer;ZLevel < STLFile.bz2; ZLevel+=MyConfig.extruder.ZThickness){//slice at the center of the layer
 					Slice ThisSlice;
-					ThisSlice = new Slice(thisapplet, STLFile, ZLevel);
-					int SliceNum = (int) Math.round(ZLevel / MyConfig.LayerThickness);
-					SSArea thisArea = new SSArea();
-					thisArea.setGridScale(0.01);
-					if(debugFlag) println("\n	GridScale: "+thisArea.GridScale);
+					ThisSlice = new Slice(thisapplet, MyConfig, STLFile, ZLevel);
+					int SliceNum = (int) Math.floor(ZLevel / MyConfig.extruder.ZThickness);
+					SSArea thisArea = new SSArea(MyConfig);
+					if(debugFlag) println("\n	GridScale: "+MyConfig.MachinePercision);
 					thisArea.Slice2Area(ThisSlice);
 					SliceAreaList.add(SliceNum, thisArea);
+					FileWriteFraction = ((ZLevel-MyConfig.FirstLayer)/(STLFile.bz2-MyConfig.FirstLayer))/10.; 
+					redraw(); 
 				}
-				FileWriteFraction=(float) 0.2;
+				FileWriteFraction= 0.2;
 				redraw();
 				ArrayList<SSArea> ShellAreaList = new ArrayList<SSArea>();
 				for(int ShellNum=0; ShellNum < SliceAreaList.size(); ShellNum++) {
-					SSArea thisArea = (SSArea) SliceAreaList.get(ShellNum);
-					SSArea thisShell = new SSArea();
-					thisShell.setGridScale(thisArea.getGridScale());
+					SSArea thisArea = SliceAreaList.get(ShellNum);
+					SSArea thisShell = new SSArea(MyConfig);
 					thisShell.add(thisArea);
-					thisShell.makeShell(0.25,8);
-					SSArea thisSubArea = new SSArea();
-					thisSubArea.setGridScale(thisArea.getGridScale());
+					thisShell.makeShell(MyConfig.ShellThickness,8);
+					SSArea thisSubArea = new SSArea(MyConfig);
 					thisSubArea.add(thisArea);
 					thisSubArea.subtract(thisShell);
 					ShellAreaList.add(ShellNum,thisSubArea);
 				}
 				FileWriteFraction=(float) 0.3;
 				redraw();
-				Fill areaFill=new Fill(true,(int)Math.round(MyConfig.BuildPlatformWidth),(int)Math.round(MyConfig.BuildPlatformHeight),0.2);
+				Fill areaFill=new Fill(MyConfig, true,(int)Math.floor(MyConfig.BuildPlatformWidth),(int)Math.floor(MyConfig.BuildPlatformHeight),0.2);
 				ArrayList<SSArea> FillAreaList = areaFill.GenerateFill(ShellAreaList);
 
 				FileWriteFraction=(float) 0.5;
 				redraw();
-				AreaWriter gcodeOut = new AreaWriter(thisapplet, debugFlag,(int)Math.round(MyConfig.BuildPlatformWidth),(int)Math.round(MyConfig.BuildPlatformHeight));
-				gcodeOut.setOperatingTemp(MyConfig.OperatingTemp);
-				gcodeOut.setFlowRate(MyConfig.ServoFlowRate);
-				gcodeOut.setLayerThickness(MyConfig.LayerThickness);
+				AreaWriter gcodeOut = new AreaWriter(thisapplet, debugFlag,(int)Math.floor(MyConfig.BuildPlatformWidth),(int)Math.floor(MyConfig.BuildPlatformHeight));
+				gcodeOut.setOperatingTemp(MyConfig.extruder.Filament.getExtrudeTemp());
+				gcodeOut.setFlowRate(MyConfig.extruder.ServoFlowRate);
+				gcodeOut.setLayerThickness(MyConfig.extruder.ZThickness);
 				gcodeOut.setPrintHeadSpeed(MyConfig.PrintFeedrate);
 				FileWriteFraction=(float) 0.7;
 				redraw();
@@ -387,12 +548,12 @@ public class SuperSkein extends PApplet {
 				String DXFFillFileName;
 				// int DXFSliceNum;
 				
-				String OpenSCADFileName = DXFSliceFilePrefix + "_" + MyConfig.LayerThickness + ".scad";
+				String OpenSCADFileName = DXFSliceFilePrefix + "_" + MyConfig.extruder.ZThickness + ".scad";
 				
 				output = createWriter(OpenSCADFileName);
 				output.println("// OpenSCAD Wrapper for sliced "+STLName.Text+" DXF.\n");
-				output.println("layerThickness="+MyConfig.LayerThickness+";");
-				output.println("layerHeight="+MyConfig.LayerThickness+"/2;");
+				output.println("layerThickness="+MyConfig.extruder.ZThickness+";");
+				output.println("layerHeight="+MyConfig.extruder.ZThickness+"/2;");
 				output.printf("minX=%.4f;\nmaxX=%.4f;\n", STLFile.bx1, STLFile.bx2);
 				output.printf("minY=%.4f;\nmaxY=%.4f;\n", STLFile.by1, STLFile.by2);
 				output.printf("minZ=%.4f;\nmaxZ=%.4f;\n", STLFile.bz1, STLFile.bz2);
@@ -407,14 +568,13 @@ public class SuperSkein extends PApplet {
 				redraw();
 				ArrayList<SSArea> SliceAreaList = new ArrayList<SSArea>();
 				int SliceNum;
-				for(double ZLevel = MyConfig.FirstLayer;ZLevel<(STLFile.bz2-MyConfig.FirstLayer);ZLevel=ZLevel+MyConfig.LayerThickness){
+				for(double ZLevel = MyConfig.FirstLayer;ZLevel<(STLFile.bz2-MyConfig.FirstLayer);ZLevel=ZLevel+MyConfig.extruder.ZThickness){
 					Slice ThisSlice;
-					ThisSlice = new Slice(thisapplet, STLFile,ZLevel);
+					ThisSlice = new Slice(thisapplet, MyConfig, STLFile,ZLevel);
 					//will abort if there is an error
-					SliceNum = (int)Math.round(ZLevel / MyConfig.LayerThickness);
-					SSArea thisArea = new SSArea();
-					thisArea.setGridScale(0.01);
-					if(debugFlag) println("\n	GridScale: "+thisArea.GridScale);
+					SliceNum = (int)Math.floor(ZLevel / MyConfig.extruder.ZThickness);
+					SSArea thisArea = new SSArea(MyConfig);
+					if(debugFlag) println("\n	GridScale: "+MyConfig.MachinePercision);
 					thisArea.Slice2Area(ThisSlice);
 					SliceAreaList.add(SliceNum, thisArea);
 				}
@@ -424,13 +584,11 @@ public class SuperSkein extends PApplet {
 				ArrayList<SSArea> ShellAreaList = new ArrayList<SSArea>();
 				for(int ShellNum=0; ShellNum < SliceAreaList.size(); ShellNum++) {
 					SSArea thisArea = (SSArea) SliceAreaList.get(ShellNum);
-					SSArea thisShell = new SSArea();
-					thisShell.setGridScale(thisArea.getGridScale());
+					SSArea thisShell = new SSArea(MyConfig);
 					thisShell.add(thisArea);
-					thisShell.makeShell(0.25,8);
+					thisShell.makeShell(MyConfig.ShellThickness,8);
 					if(ShellNum>0) {
-						SSArea bridgeCheck = new SSArea();
-						bridgeCheck.setGridScale(thisArea.getGridScale());
+						SSArea bridgeCheck = new SSArea(MyConfig);
 						bridgeCheck.add(thisArea);
 						bridgeCheck.subtract( (SSArea) SliceAreaList.get(ShellNum-1));
 						if(!bridgeCheck.isEmpty()){
@@ -445,25 +603,25 @@ public class SuperSkein extends PApplet {
 
 				DXFWriteFraction=0.4;
 				redraw();
-				Fill areaFill = new Fill(true,Math.round(MyConfig.BuildPlatformWidth),Math.round(MyConfig.BuildPlatformHeight),0.2);
+				Fill areaFill = new Fill(MyConfig, true,(int)Math.floor(MyConfig.BuildPlatformWidth),(int)Math.floor(MyConfig.BuildPlatformHeight),0.2);
 				ArrayList<SSArea> FillAreaList = areaFill.GenerateFill(SliceAreaList);
 
 				DXFWriteFraction=0.5;
 				redraw();
-				DXFSliceFileName = DXFSliceFilePrefix + "_slices_" + MyConfig.LayerThickness + ".dxf";
+				DXFSliceFileName = DXFSliceFilePrefix + "_slices_" + MyConfig.extruder.ZThickness + ".dxf";
 				print("DXF Slice File Name: " + DXFSliceFileName + "\n");
-				AreaWriter dxfOut = new AreaWriter(thisapplet, false,Math.round(MyConfig.BuildPlatformWidth),Math.round(MyConfig.BuildPlatformHeight));
+				AreaWriter dxfOut = new AreaWriter(thisapplet, false,(int)Math.floor(MyConfig.BuildPlatformWidth),(int)Math.floor(MyConfig.BuildPlatformHeight));
 				dxfOut.ArrayList2DXF(DXFSliceFileName,SliceAreaList);
 
 				DXFWriteFraction=(float) 0.6;
 				redraw();
-				DXFShellFileName = DXFSliceFilePrefix + "_shells_" + MyConfig.LayerThickness + ".dxf";
+				DXFShellFileName = DXFSliceFilePrefix + "_shells_" + MyConfig.extruder.ZThickness + ".dxf";
 				print("DXF Shell File Name: " + DXFShellFileName + "\n");
 				dxfOut.ArrayList2DXF(DXFShellFileName,ShellAreaList);
 
 				DXFWriteFraction=(float) 0.7;
 				redraw();
-				DXFFillFileName = DXFSliceFilePrefix + "_fill_" + MyConfig.LayerThickness + ".dxf";
+				DXFFillFileName = DXFSliceFilePrefix + "_fill_" + MyConfig.extruder.ZThickness + ".dxf";
 				print("DXF Fill File Name: " + DXFFillFileName + "\n");
 				dxfOut.ArrayList2DXF(DXFFillFileName,FillAreaList);
 
@@ -520,7 +678,7 @@ public class SuperSkein extends PApplet {
 					// open(OpenSCADFileName);
 				}
 
-				MeshHeight=(float) (STLFile.bz2-STLFile.bz1);
+				MeshHeight= STLFile.bz2-STLFile.bz1;
 				STLLoadedFlag = true;
 				redraw();
 			}

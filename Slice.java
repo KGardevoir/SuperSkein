@@ -6,20 +6,22 @@ import processing.core.PApplet;
 class Slice {
 	public SliceTree slice;
 	PApplet applet; 
+	Configuration config; 
 	@SuppressWarnings("unused")
 	//Right now this is all in the constructor.
 	//It might make more sense to split these
 	//out but that's a pretty minor difference
 	//at the moment.
-	Slice(PApplet app, Mesh InMesh, double ZLevel) throws EmptyLineException{
+	Slice(PApplet app, Configuration conf, Mesh InMesh, double ZLevel) throws EmptyLineException{
 		applet = app; 
+		config = conf; 
 		ArrayList<SSLine> UnsortedLines;
 		ArrayList<SSLine> Lines;
 		SSLine Intersection;
 		UnsortedLines = new ArrayList<SSLine>();
 		for(int i = InMesh.Triangles.size()-1;i>=0;i--){
 			Triangle tri = (Triangle) InMesh.Triangles.get(i);
-			Intersection = tri.GetZIntersect(ZLevel);
+			Intersection = tri.GetZIntersect(conf, ZLevel);
 			if(Intersection != null) UnsortedLines.add(Intersection);
 		}
 		
@@ -94,20 +96,20 @@ class Slice {
 		int k = 0; 
 		double sx, sy; 
 		for(int i = 0; k < Lines.size(); i++){
-			SSPath path = new SSPath(); 
+			SSPath path = new SSPath(config); 
 			paths.add(path);
 			SSLine line = Lines.get(k++);
-			path.addPoint(line.x1, line.y1); 
-			path.addPoint(line.x2, line.x2); 
+			path.moveTo(line.x1, line.y1); 
+			path.lineTo(line.x2, line.y2); 
 			sx = line.x1; sy = line.y1; 
 			double lx = line.x2, ly = line.y2; 
 			while(k < Lines.size()){
 				line = Lines.get(k++); 
-				if(Math.abs(line.x2 - sx) < 1e6 && Math.abs(line.y2-sy) < 1e6){
+				if(Math.abs(line.x2 - sx) < 1e-6 && Math.abs(line.y2-sy) < 1e-6){
 					//end of loop
 					path.closePath(); 
 					break; 
-				} else if(Math.abs(lx - line.x1) > 1e6 || Math.abs(ly - line.y1) > 1e6) {//check to see if we need to force the end of loop
+				} else if(Math.abs(lx - line.x1) > 1e-6 || Math.abs(ly - line.y1) > 1e-6) {//check to see if we need to force the end of loop
 					path.closePath(); 
 					break; 
 				} else {

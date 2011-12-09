@@ -12,12 +12,13 @@ class Fill {
 	double RotateFillAngle;
 	SSArea SparseFill;
 	SSArea BridgeFill;
-
-	Fill(boolean bFlag, int iWidth, int iHeight, double fillDensity) {
-		this(bFlag,(long)iWidth,(long)iHeight,fillDensity); 
+	Configuration config; 
+	public Fill(Configuration conf, boolean bFlag, int iWidth, int iHeight, double fillDensity) {
+		this(conf, bFlag,(long)iWidth,(long)iHeight,fillDensity); 
 	}
 
-	public Fill(boolean bFlag, long iWidth, long iHeight, double fillDensity) {
+	public Fill(Configuration conf, boolean bFlag, long iWidth, long iHeight, double fillDensity) {
+		config = conf; 
 		RotateFillAngle=45.0;
 		debugFlag=bFlag;
 		Width=iWidth;
@@ -26,9 +27,8 @@ class Fill {
 			System.out.println("Invalid Fill Density: out of 0 to 1.0 range. Setting to 0.5");
 			SparseFillDensity=0.5;
 		} else SparseFillDensity=fillDensity;
-		ExtruderProperties = new Extruder();
-		SparseFill = new SSArea();
-		SparseFill.setGridScale(0.01);
+		ExtruderProperties = conf.extruder;
+		SparseFill = new SSArea(conf);
 		double wallWidth=ExtruderProperties.calcWallWidth();
 		for(double dx=0;dx<2*Width; dx+=2*wallWidth/fillDensity) {
 			Rectangle2D thisRect = new Rectangle2D.Double(dx,0,wallWidth/fillDensity,2*Height);
@@ -38,8 +38,7 @@ class Fill {
 			thisRectArea.transform(centerAreaTransform);
 			SparseFill.add(thisRectArea);
 		}
-		BridgeFill = new SSArea();
-		BridgeFill.setGridScale(0.01);
+		BridgeFill = new SSArea(conf);
 		for(double dx=0;dx<2*Width; dx+=2*wallWidth) {
 			Rectangle2D thisRect = new Rectangle2D.Double(dx,0,wallWidth,2*Height);
 			Area thisRectArea = new Area(thisRect);
@@ -52,22 +51,18 @@ class Fill {
 
 	ArrayList<SSArea> GenerateFill(ArrayList<SSArea> SliceList) {
 		ArrayList<SSArea> FillAreaList = new ArrayList<SSArea>();
-		double wallWidth=ExtruderProperties.calcWallWidth();
 		for(int LayerNum=0; LayerNum<SliceList.size();LayerNum++) {
 			SSArea thisArea = SliceList.get(LayerNum);
 			// Shell area to subtract off slice.
-			SSArea thisShell = new SSArea();
-			thisShell.setGridScale(thisArea.getGridScale());
+			SSArea thisShell = new SSArea(config);
 			thisShell.add(thisArea);
-			thisShell.makeShell(wallWidth,8);
+			thisShell.makeShell(config.ShellThickness,8);
 			// Fill mask area
-			SSArea thisFill = new SSArea();
-			thisFill.setGridScale(thisArea.getGridScale());
+			SSArea thisFill = new SSArea(config);
 			thisFill.add(thisArea);
 			thisFill.subtract(thisShell);
 			// Identify bridge areas for special treatment.
-			SSArea thisBridge = new SSArea();
-			thisBridge.setGridScale(thisFill.getGridScale());
+			SSArea thisBridge = new SSArea(config);
 			thisBridge.add(thisFill);
 			AffineTransform rotateFill = new AffineTransform();
 			rotateFill.setToRotation(2*Math.PI*RotateFillAngle/360.0);
@@ -79,8 +74,7 @@ class Fill {
 				thisBridge.subtract(prevArea);
 				// Identify cap areas for special treatment.
 				SSArea nextArea = SliceList.get(LayerNum+1);
-				SSArea thisCap = new SSArea();
-				thisCap.setGridScale(thisFill.getGridScale());
+				SSArea thisCap = new SSArea(config);
 				thisCap.add(thisArea);
 				thisCap.subtract(nextArea);
 				thisBridge.add(thisCap);

@@ -4,50 +4,36 @@ import java.awt.geom.Area;
 import java.util.ArrayList;
 
 class SSArea extends Area {
-	double GridScale;
-	double HeadSpeed;
-	double FlowRate;
+	Configuration config; 
 
-	SSArea(){
-		GridScale=0.01;
-		HeadSpeed=1000.;
-		FlowRate=0.;
+	SSArea(Configuration conf){
+		config = conf; 
 	}
-	SSArea(Slice aSlice){
-		this(); 
+	SSArea(Configuration conf, Slice aSlice){
+		this(conf); 
 		Slice2Area(aSlice); 
 	}
 	
-	void setGridScale(double d){ GridScale = d; }
-	double getGridScale(){ return GridScale; }
-
-	void setHeadSpeed(double aHeadSpeed){ HeadSpeed = aHeadSpeed; }
-	double getHeadSpeed(){ return HeadSpeed; }
-
-	void setFlowRate(double aFlowRate){ FlowRate = aFlowRate; }
-	double getFlowRate(){ return FlowRate; }
-
 	void Slice2Area(Slice thisSlice){
-		SSPoly path2polys = new SSPoly();
-		path2polys.setGridScale(GridScale);
-		ArrayList<SSPoly> PolyList = path2polys.Path2Polys(thisSlice.SlicePath);
+		SSPoly path2polys = new SSPoly(config);
+		ArrayList<SSPoly> PolyList = path2polys.Path2Polys(thisSlice.slice);
 		for(int i=0;i<PolyList.size();i++) {
 			SSPoly thisPoly = PolyList.get(i);
 			this.exclusiveOr(new Area((Shape) thisPoly));
 		}
 		AffineTransform scaleAreaTransform = new AffineTransform();
-		scaleAreaTransform.setToScale(GridScale,GridScale);
+		scaleAreaTransform.setToScale(config.MachinePercision,config.MachinePercision);
 		this.transform(scaleAreaTransform);
 	}
 
-	void makeShell(double wallWidth, int dirCount){
+	void makeShell(int num_walls, int dirCount){
 		//double sqt2 = Math.sqrt(2);
 		//TODO fix implementation (wallWidth really should be in layers)
 		AffineTransform shiftTrans = new AffineTransform();
 		Area innerArea = new Area(this);
 		for(int i=0;i<dirCount;i++) {
-			double dx = wallWidth*Math.cos(i*360/dirCount);
-			double dy = wallWidth*Math.sin(i*360/dirCount);
+			double dx = config.extruder.XYThickness*num_walls*Math.cos(i*2*Math.PI/dirCount);
+			double dy = config.extruder.XYThickness*num_walls*Math.sin(i*2*Math.PI/dirCount);
 			shiftTrans.setToTranslation(dx,dy);
 			Area shiftCopy = this.createTransformedArea(shiftTrans);
 			shiftCopy.subtract(this);

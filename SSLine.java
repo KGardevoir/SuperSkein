@@ -16,23 +16,17 @@ class SSLine extends Line2D.Double {
 	 * 
 	 */
 	private static final long serialVersionUID = 9161900654120601922L;
-	double HeadSpeed;
-	double Flowrate;
+	Configuration config; 
 	
 	final double epsilon = 1e-6;
 	
-	SSLine(double nx1, double ny1, double nx2, double ny2) {
+	SSLine(Configuration conf, double nx1, double ny1, double nx2, double ny2) {
 		super(nx1,ny1,nx2,ny2);
-		HeadSpeed = 1000; //By default it at least does move.
-		Flowrate = 0; //By default the plastic does not flow.
+		config = conf; 
 	}
 
 
-	SSLine(PVector pt1, PVector pt2) {
-		super(pt1.x,pt1.y,pt2.x,pt2.y);
-		HeadSpeed = 1000; //By default it at least does move.
-		Flowrate = 0; //By default the plastic does not flow.
-	}
+	SSLine(Configuration conf, PVector pt1, PVector pt2) { this(conf, pt1.x,pt1.y,pt2.x,pt2.y); }
 	
 	
 	void setPoint1(PVector pt) {
@@ -226,7 +220,7 @@ class SSLine extends Line2D.Double {
 		double nuy1 = y1 + offsetby * Math.sin(perpang);
 		double nux2 = x2 + offsetby * Math.cos(perpang);
 		double nuy2 = y2 + offsetby * Math.sin(perpang);
-		return new SSLine(nux1, nuy1, nux2, nuy2);
+		return new SSLine(config, nux1, nuy1, nux2, nuy2);
 	}
 	
 	

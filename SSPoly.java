@@ -10,56 +10,41 @@ class SSPoly extends Polygon {
 	 * 
 	 */
 	private static final long serialVersionUID = -119460655901776709L;
-	double GridScale;
-	double HeadSpeed;
-	double Flowrate;
+	private Configuration config;
 	boolean debugFlag;
 
-	SSPoly(){
-		GridScale=0.01;
-		HeadSpeed=1000;
-		Flowrate=0;
-		debugFlag=false;
+	SSPoly(Configuration conf){
+		config = conf; 
 	}
-
-	void setGridScale(double adouble){ GridScale=adouble; }
-	double getGridScale() { return(GridScale); }
-
-	void setHeadSpeed(double adouble){ HeadSpeed=adouble; }
-	double getHeadSpeed(){ return(HeadSpeed); }
-
-	void setFlowrate(double adouble) { Flowrate=adouble; }
-	double getFlowrate() { return(Flowrate); }
 
 	void setDebugFlag(boolean aBool) { debugFlag = aBool; }
 	boolean getDebugFlag() { return(debugFlag); }
 
 	void addPoint(double fx, double fy) {
-		double scalefx = Math.round(fx/GridScale);
-		double scalefy = Math.round(fy/GridScale);
+		double scalefx = Math.round(fx/config.MachinePercision);
+		double scalefy = Math.round(fy/config.MachinePercision);
 		addPoint((int)scalefx,(int)scalefy);
 	}
 
 	public boolean contains(double fx, double fy) {
-		double scalefx = Math.round(fx/GridScale);
-		double scalefy = Math.round(fy/GridScale);
+		double scalefx = Math.round(fx/config.MachinePercision);
+		double scalefy = Math.round(fy/config.MachinePercision);
 		boolean bContains = contains((int)scalefx,(int)scalefy);
 		return(bContains);
 	}
 
 	void translate(double fx, double fy) {
-		double scalefx = Math.round(fx/GridScale);
-		double scalefy = Math.round(fy/GridScale);
+		double scalefx = Math.round(fx/config.MachinePercision);
+		double scalefy = Math.round(fy/config.MachinePercision);
 		translate((int)scalefx,(int)scalefy);
 	}
 
-	ArrayList<SSPoly> Path2Polys(SSPath thisPath) {
+	ArrayList<SSPoly> Path2Polys(SliceTree slice) {
 		ArrayList<SSPoly> returnList = new ArrayList<SSPoly>();
-		SSPoly thisPoly = new SSPoly();
+		SSPoly thisPoly = new SSPoly(config);
 		thisPoly.setDebugFlag(debugFlag);
-		thisPoly.setGridScale(GridScale);
 		returnList.add(thisPoly);
-		PathIterator pathIter = thisPath.getPathIterator(new AffineTransform());
+		PathIterator pathIter = slice.flatten(config).getPathIterator(new AffineTransform());
 		double[] newCoords = {0.0,0.0,0.0,0.0,0.0,0.0};
 		double[] prevCoords = {0.0,0.0,0.0,0.0,0.0,0.0};
 		double[] startCoords = {0.0,0.0,0.0,0.0,0.0,0.0};
@@ -78,9 +63,8 @@ class SSPoly extends Polygon {
 				segType = pathIter.currentSegment(prevCoords);
 			} else if(segType == PathIterator.SEG_MOVETO) {
 				if(debugFlag) System.out.println("\n	Polygon: "+returnList.size()+"	SEG_MOVETO: "+newCoords[0]+" "+newCoords[1]);
-				thisPoly = new SSPoly();
+				thisPoly = new SSPoly(config);
 				thisPoly.setDebugFlag(debugFlag);
-				thisPoly.setGridScale(GridScale);
 				returnList.add(thisPoly);
 				segType = pathIter.currentSegment(prevCoords);
 				segType = pathIter.currentSegment(startCoords);
@@ -93,4 +77,5 @@ class SSPoly extends Polygon {
 		if(debugFlag) System.out.println(" SSPoly Count: " + returnList.size() + "\n");
 		return(returnList);
 	}
+
 }

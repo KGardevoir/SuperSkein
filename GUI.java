@@ -24,7 +24,7 @@ class GUI {
 	}
 	
 	void display(){
-		font = applet.loadFont("ArialMT-12.vlw");
+		font = applet.loadFont("data/ArialMT-12.vlw");
 		applet.noFill();
 		applet.stroke(255);
 		applet.strokeWeight(1);
@@ -75,7 +75,7 @@ class GUIProgressBar {
 	
 	void display(){
 		PFont font;
-		font = applet.loadFont("ArialMT-12.vlw");
+		font = applet.loadFont("data/ArialMT-12.vlw");
 		applet.textAlign(PConstants.CENTER);
 		applet.textFont(font);
 		applet.textMode(PConstants.SCREEN);
@@ -173,12 +173,12 @@ class GUIFloatBox {
 
 	
 	boolean over(int ix,int iy) {
-		if((ix>x)&(ix<(x+w)&(iy>y)&(iy<(y+h)))) return true;
+		if((ix>x)&&(ix<(x+w)&&(iy>y)&&(iy<(y+h)))) return true;
 		else return false;
 	}
 	
 	void display() {
-		PFont font = applet.loadFont("ArialMT-12.vlw");
+		PFont font = applet.loadFont("data/ArialMT-12.vlw");
 		applet.textAlign(PConstants.LEFT);
 		applet.textFont(font);
 		applet.textMode(PConstants.SCREEN);
@@ -223,5 +223,42 @@ class GUIFloatBox {
 		if((in<1000)&(in>100))Text=PApplet.nf(in,3,2);
 		if((in<10000)&(in>1000))Text=PApplet.nf(in,4,2);
 		if(in>10000)Text=PApplet.nf(in,5,2);
+	}
+}
+class GUICheckBox{
+	String Text; 
+	int x,y, w = 15, h = 15; 
+	boolean checked; 
+	PApplet applet; 
+	GUICheckBox(PApplet app, int ix, int iy, boolean state, String tex){
+		applet = app; 
+		Text = tex; 
+		x = ix; 
+		y = iy; 
+		checked = state; 
+	}
+	boolean over(int ix,int iy) {
+		if((ix>x)&&(ix<(x+w)&&(iy>y)&&(iy<(y+h)))) return true;
+		else return false;
+	}
+	void toggle(){
+		checked = !checked; 
+	}
+	void display() {
+		PFont font = applet.loadFont("data/ArialMT-12.vlw");
+		applet.textAlign(PConstants.LEFT);
+		applet.textFont(font);
+		applet.textMode(PConstants.SCREEN);
+		applet.fill(0);
+		applet.stroke(200);
+		applet.strokeWeight(1);
+
+		applet.rect(x,y,w,h);
+		if(checked){
+			applet.line(x, y, x+w, y+h); 
+			applet.line(x+w, y, x, y+h);
+		}
+		applet.fill(255);
+		applet.text(Text,x+w+2,y+12);
 	}
 }
