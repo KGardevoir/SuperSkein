@@ -1,7 +1,6 @@
 import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 
@@ -12,11 +11,17 @@ public class SliceTree {
 	}
 	private class ITn {
 		public SSPath path; 
-		public int index; 
+		public final int index; 
+		public final boolean interior; 
 		public ArrayList<ITn> children; //use ArrayList for speed
-		public ITn(SSPath p, int idx){
+		/**
+		 * @param p
+		 * @param idx
+		 */
+		public ITn(SSPath p, int idx, boolean in){
 			path = p; 
 			index = idx; 
+			interior = in; 
 			children = new ArrayList<ITn>(); 
 		}
 	}
@@ -59,7 +64,7 @@ public class SliceTree {
 			if(k == bneed){//we have a node, its of the right order, now we need to its home
 				IndexBooleanArray links = pathtype.remove(i);
 				SSPath thePath = paths.get(links.index);
-				if(roots.isEmpty() || bneed == 0) roots.add(new ITn(thePath, links.index)); 
+				if(roots.isEmpty() || bneed == 0) roots.add(new ITn(thePath, links.index, bneed%2==1)); 
 				else {
 					boolean has = false; 
 					for(ITn startingroots : roots){
@@ -78,11 +83,11 @@ public class SliceTree {
 							if(!ohas) break; 
 						}
 						if(has){
-							startingroots.children.add(new ITn(thePath, links.index)); 
+							startingroots.children.add(new ITn(thePath, links.index, bneed%2==1)); 
 							break; //we found its place
 						}
 					}
-					if(!has) roots.add(new ITn(thePath, links.index)); 
+					if(!has) roots.add(new ITn(thePath, links.index, bneed%2==1)); 
 				}
 			} else if(k == -1){
 				System.out.println("Empty Slice List"); 
@@ -105,8 +110,12 @@ public class SliceTree {
 		}
 		return p;
 	}
+	/**
+	 * @return Corrects winding order based on edge loop. If the 
+	 * edge sum < 0 counterclockwise, else if the edge sum >= 0 clockwise
+	 */
 	private void fixWindings(){
-		LinkedList<ITn> clevel = new LinkedList<ITn>(root), nlevel = new LinkedList<ITn>(); 
+		LinkedList<ITn> clevel = new LinkedList<ITn>(root); 
 		while(!clevel.isEmpty()){
 			ITn list = clevel.remove();
 			PathIterator p = list.path.getPathIterator(new AffineTransform());
@@ -127,8 +136,11 @@ public class SliceTree {
 					s[0][1] = s[1][1]; 
 				}
 			}
-			if(sum < 0)//incorrect winding order
+			if(sum < 0 && !list.interior)//incorrect winding order
 				list.path.reverse(); 
+			else if(sum >= 0 && list.interior)
+				list.path.reverse(); 
+			
 			clevel.addAll(list.children); 
 		}
 	}

@@ -236,14 +236,8 @@ public class SuperSkein extends PApplet {
 					scale(DisplayScale);
 					rotate((float) Math.PI);
 					fill(204, 102, 0);
-					//ellipse(pp[0], pp[1], 5/DisplayScale, 5/DisplayScale);
 					noFill(); 
-					double[][] p = /*{{0,10},{10,-10},{-10,-10}};*/new double[3][6]; double[][] fp = new double[3][2]; 
-					/*triangle(p[0][0], p[0][1], p[1][0], p[1][1], p[2][0], p[2][1]);
-					float[] n = perpV(p[0], p[1], p[2]); 
-					line(p[1][0],p[1][1], p[1][0] + n[0]*10, p[1][1] + n[1]*10);*/
-					line(p[0][0], p[0][1], p[1][0], p[1][1]);
-					line(p[2][0], p[2][1], p[0][0], p[0][1]); 
+					double[][] p = new double[3][6]; double[][] fp = new double[3][2]; 
 					
 					for(; !iter.isDone(); iter.next()){
 						int type = iter.currentSegment(p[2]);
@@ -258,24 +252,21 @@ public class SuperSkein extends PApplet {
 							fp[1][0] = p[1][0]; 
 							fp[1][1] = p[1][1]; 
 							line(p[0][0], p[0][1], p[1][0], p[1][1]);
+							ellipse((float)p[0][0], (float)p[0][1],1, 1);
+							ellipse((float)p[1][0], (float)p[1][1],1, 1);
+							ellipse((float)p[0][0], (float)p[0][1], 2, 2); 
 						} else if(type == PathIterator.SEG_CLOSE) {
 							p[2][0] = fp[0][0]; 
 							p[2][1] = fp[0][1]; 
 							line(p[1][0], p[1][1], p[2][0], p[2][1]); 
-							double[] v = perpV(p[0],p[1],p[2]); 
-							line(p[1][0], p[1][1], p[1][0] + v[0],p[1][1] + v[1]);
-							//line(p[1][0], p[1][1], p[1][0] + -v[0],p[1][1] + -v[1]);
+							ellipse((float)p[1][0], (float)p[1][1],1, 1);
 							p[0][0] = fp[1][0]; 
 							p[0][1] = fp[1][1]; 
-							v = perpV(p[1], p[2], p[0]); 
-							line(p[2][0], p[2][1], p[2][0] + v[0],p[2][1] + v[1]);
-							//line(p[2][0], p[2][1], p[2][0] + -v[0],p[2][1] + -v[1]);
 							continue; 
 						}
-						double[] v = perpV(p[0],p[1], p[2]); 
 						line(p[1][0], p[1][1], p[2][0], p[2][1]); 
-						line(p[1][0], p[1][1], p[1][0] + v[0],p[1][1] + v[1]);
-						//line(p[1][0], p[1][1], p[1][0] - v[0],p[1][1] - v[1]);
+
+						ellipse((float)p[1][0], (float)p[1][1],1, 1);
 						p[0][0] = p[1][0]; //shift parameters down
 						p[0][1] = p[1][1]; 
 						p[1][0] = p[2][0]; 
@@ -292,73 +283,6 @@ public class SuperSkein extends PApplet {
 			LeftButton.display();
 			RightButton.display();
 		}
-	}
-	final public double root2 = Math.sqrt(2); 
-	double mag(double[] a, double[] b){//length relative to b (or a, depending on perspective)
-		double ma = a[0]-b[0]; 
-		double mb = a[1]-b[1];  
-		return Math.sqrt(ma*ma+mb*mb); 
-	}
-	double mag(double[] v){ return Math.sqrt(v[0]*v[0]+v[1]*v[1]); }
-	double dot(double[] u, double[]v){ return u[0]*v[0]+u[1]*v[1]; }
-	float mag(float[] v){ return (float) Math.sqrt(v[0]*v[0]+v[1]*v[1]); }
-	float dot(float[] u, float[]v){ return u[0]*v[0]+u[1]*v[1]; }
-	double[] perpV(double[] a, double[] b, double[] c){
-		double[] u = {c[0] - b[0], c[1] - b[1]}; 
-		double[] v = {a[0] - b[0], a[1] - b[1]}; 
-		double[] w = {a[0] - c[0], a[1] - c[1]};
-		double mu = mag(u), mv = mag(v);//, mw = mag(w); 
-		/*if(dot(u,v)/(mu*mv) <= 1/root2){
-			double[] pv = {-w[1], w[0]}; 
-			double mpv = mag(pv); 
-			pv[0] /= mpv; 
-			pv[1] /= mpv;
-			return pv;
-		} else*/ {
-			double[] vp2w = {u[0] + w[0]/2, u[1] + w[1]/2}; 
-			double mvp2w = mag(vp2w); 
-			vp2w[0] /= mvp2w;
-			vp2w[1] /= mvp2w; 
-			return vp2w; 
-		}
-	}/*
-	float[] perpV(float[] a, float[] b, float[] c){
-		float[] u = {c[0] - b[0], c[1] - b[1]}; 
-		float[] v = {a[0] - b[0], a[1] - b[1]}; 
-		float[] w = {a[0] - c[0], a[1] - c[1]};
-		float mu = mag(u), mv = mag(v);//, mw = mag(w); 
-		if(dot(u,v)/(mu*mv) <= 1/root2){
-			float[] pv = {-w[1], w[0]}; 
-			float mpv = mag(pv); 
-			pv[0] /= mpv; 
-			pv[1] /= mpv;
-			return pv;
-		} else {
-			float[] vp2w = {u[0] + w[0]/2, u[1] + w[1]/2}; 
-			float mvp2w = mag(vp2w); 
-			vp2w[0] /= mvp2w;
-			vp2w[1] /= mvp2w; 
-			return vp2w; 
-		}
-	}*/
-	/*double[] cornerV(double[] a, double[] b, double[] c){//vectors
-		//double mu = mag(c, b), mw = mag(a, c);// mc = mag(c, a); 
-		double[] u = {c[0] - b[0], c[1] - b[1]}; 
-		double[] w = {a[0] - c[0], a[1] - c[1]}; 
-		//double x = Math.acos((ma*ma-mb*mb+mc*mc)/(2*ma*mc)) + Math.acos((a[0]-b[0])/ma);//TODO finish, this should be the correct ray, but we need to optimize
-		
-		double[] v = {u[0] + w[0]/2., u[1] + w[1]/2.};
-		double mv = mag(v);
-		v[0] /= mv; 
-		v[1] /= mv; 
-		//double[] v = {Math.sqrt(1-(x*x)/(s*s)), x/s}; 
-		//System.out.println(x*180./Math.PI); 
-		return v; 
-	}*/
-	double areaA(double[] a, double[] b, double[] c){//heron's theorem
-		double ma = mag(a, b), mb = mag(b, c), mc = mag(c, a), s; 
-		s = (ma+mb+mc)/2; 
-		return Math.sqrt(s*(s-ma)*(s-mb)*(s-mc));  
 	}
 	private void line(double x1, double y1, double x2, double y2) {
 		line((float)x1,(float)y1,(float)x2,(float)y2);

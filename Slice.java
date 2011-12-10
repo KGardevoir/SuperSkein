@@ -46,8 +46,8 @@ class Slice {
 
 		int iNextLine;
 
-		double epsilon = 1e-6;
-		
+		double epsilon = Math.pow(10, -config.Percision);
+		epsilon *= epsilon; 
 		//while(Lines.size()<FinalSize)
 		while(UnsortedLines.size()>0){
 			SSLine CLine = (SSLine) Lines.get(Lines.size()-1);//Get last
@@ -56,8 +56,8 @@ class Slice {
 			boolean doflip = false;
 			for(int i = UnsortedLines.size()-1;i>=0;i--){
 				SSLine LineCandidate = (SSLine) UnsortedLines.get(i);
-				dist				 = mag(LineCandidate.x1-CLine.x2, LineCandidate.y1-CLine.y2);
-				dist_flipped 		 = mag(LineCandidate.x2-CLine.x2, LineCandidate.y2-CLine.y2); // flipped
+				dist				 = mag2(LineCandidate.x1-CLine.x2, LineCandidate.y1-CLine.y2);
+				dist_flipped 		 = mag2(LineCandidate.x2-CLine.x2, LineCandidate.y2-CLine.y2); // flipped
 					
 				if(dist<epsilon){
 					// We found exact match.	Break out early.
@@ -91,11 +91,24 @@ class Slice {
 			Lines.add(LineToMove);
 			UnsortedLines.remove(iNextLine);
 		}
-//		Paths = new ArrayList();
+		//merge duplicate lines
+		//int l = 0;
+		double mp2 = config.MachinePercision*config.MachinePercision; //we can avoid square roots by computing using the square
+		//its actually faster to use ArrayList(dynamic arrays) than LinkedLists because of their lookup speed vs the chance of 
+		//there having to be a duplicate line deletion
+		for(int i = 0; i < Lines.size(); i++){//each line has 2 points
+			for(int j = i+1; j < Lines.size(); j++){
+				if(mag2(Lines.get(j).x1-Lines.get(i).x1, Lines.get(j).y1-Lines.get(i).y1) < mp2 &&
+					mag2(Lines.get(j).x2-Lines.get(i).x2, Lines.get(j).y2-Lines.get(i).y2) < mp2){
+						Lines.remove(j--);
+						//l++; 
+				}
+			}
+		}
+		//if(l > 0) System.out.println("Found " + l + " duplicate lines"); 
 		ArrayList<SSPath> paths = new ArrayList<SSPath>(); 
-		int k = 0; 
 		double sx, sy; 
-		for(int i = 0; k < Lines.size(); i++){
+		for(int i = 0, k = 0; k < Lines.size(); i++){
 			SSPath path = new SSPath(config); 
 			paths.add(path);
 			SSLine line = Lines.get(k++);
@@ -105,22 +118,30 @@ class Slice {
 			double lx = line.x2, ly = line.y2; 
 			while(k < Lines.size()){
 				line = Lines.get(k++); 
-				if(Math.abs(line.x2 - sx) < 1e-6 && Math.abs(line.y2-sy) < 1e-6){
+				if(mag2(line.x2 - sx, line.y2 - sy) < mp2){
 					//end of loop
 					path.closePath(); 
 					break; 
-				} else if(Math.abs(lx - line.x1) > 1e-6 || Math.abs(ly - line.y1) > 1e-6) {//check to see if we need to force the end of loop
+				} else if(mag2(lx - line.x1, ly - line.y1) > mp2) {//check to see if we need to force the end of loop
 					path.closePath(); 
 					break; 
 				} else {
-					path.addPoint(lx = line.x2, ly = line.y2); 
+					path.lineTo(lx = line.x2, ly = line.y2); 
 				}
 			}
+		}
+		
+		//now we iterate, again, to merge strait lines
+		for(int i = 0; i < paths.size(); i++){
+			paths.set(i, paths.get(i).cull());
 		}
 		slice = new SliceTree(paths); 
 	}
 	private double mag(double d, double e) {
 		return Math.sqrt(d*d+e*e);
+	}
+	private double mag2(double d, double e){
+		return d*d + e*e; 
 	}
 } 
 
