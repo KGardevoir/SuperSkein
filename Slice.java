@@ -91,7 +91,7 @@ class Slice {
 			Lines.add(LineToMove);
 			UnsortedLines.remove(iNextLine);
 		}
-		//merge duplicate lines
+		//remove duplicate lines
 		//int l = 0;
 		double mp2 = config.MachinePercision*config.MachinePercision; //we can avoid square roots by computing using the square
 		//its actually faster to use ArrayList(dynamic arrays) than LinkedLists because of their lookup speed vs the chance of 
@@ -136,9 +136,6 @@ class Slice {
 			paths.set(i, paths.get(i).cull());
 		}
 		slice = new SliceTree(paths); 
-	}
-	private double mag(double d, double e) {
-		return Math.sqrt(d*d+e*e);
 	}
 	private double mag2(double d, double e){
 		return d*d + e*e; 

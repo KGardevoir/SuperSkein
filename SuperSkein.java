@@ -1,9 +1,7 @@
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import processing.core.*; 
 
@@ -229,7 +227,8 @@ public class SuperSkein extends PApplet {
 					}//slice the mesh correctly and draw profile
 				} else {//XXX use real slices
 					redraw(); 
-					SSPath cslice = Slice.get(Math.min(Slice.size()-1, Math.max(0, (int)Math.floor((1.-layerHeight.getPos())*(Slice.size()-1))))).slice.flatten(MyConfig); 
+					SliceTree tree = Slice.get(Math.min(Slice.size()-1, Math.max(0, (int)Math.floor((1.-layerHeight.getPos())*(Slice.size()-1))))).slice; 
+					SSPath cslice = tree.flatten(MyConfig); 
 					PathIterator iter = cslice.getPathIterator(new AffineTransform()); 
 					pushMatrix(); 
 					translate(MyConfig.BuildPlatformWidth/2*DisplayScale, MyConfig.BuildPlatformHeight/2*DisplayScale);
@@ -252,21 +251,21 @@ public class SuperSkein extends PApplet {
 							fp[1][0] = p[1][0]; 
 							fp[1][1] = p[1][1]; 
 							line(p[0][0], p[0][1], p[1][0], p[1][1]);
-							ellipse((float)p[0][0], (float)p[0][1],1, 1);
-							ellipse((float)p[1][0], (float)p[1][1],1, 1);
+							//ellipse((float)p[0][0], (float)p[0][1], 1, 1);
+							ellipse((float)p[1][0], (float)p[1][1], (float)1./2, (float)1./2);
 							ellipse((float)p[0][0], (float)p[0][1], 2, 2); 
 						} else if(type == PathIterator.SEG_CLOSE) {
 							p[2][0] = fp[0][0]; 
 							p[2][1] = fp[0][1]; 
 							line(p[1][0], p[1][1], p[2][0], p[2][1]); 
-							ellipse((float)p[1][0], (float)p[1][1],1, 1);
+							ellipse((float)p[1][0], (float)p[1][1], (float)1./2, (float)1./2);
 							p[0][0] = fp[1][0]; 
 							p[0][1] = fp[1][1]; 
 							continue; 
 						}
 						line(p[1][0], p[1][1], p[2][0], p[2][1]); 
 
-						ellipse((float)p[1][0], (float)p[1][1],1, 1);
+						ellipse((float)p[1][0], (float)p[1][1], (float)1./2, (float)1./2);
 						p[0][0] = p[1][0]; //shift parameters down
 						p[0][1] = p[1][1]; 
 						p[1][0] = p[2][0]; 

@@ -14,10 +14,6 @@ public class SliceTree {
 		public final int index; 
 		public final boolean interior; 
 		public ArrayList<ITn> children; //use ArrayList for speed
-		/**
-		 * @param p
-		 * @param idx
-		 */
 		public ITn(SSPath p, int idx, boolean in){
 			path = p; 
 			index = idx; 

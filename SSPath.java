@@ -76,24 +76,24 @@ class SSPath extends Path2D.Double {
 	}
 	private class ClosedPath{//represent path as a linkedlist
 		public double[] pt; 
-		private ClosedPath next; 
-		private ClosedPath prev; 
+		ClosedPath next; 
+		ClosedPath prev; 
 		private ClosedPath(double[] pt){
 			this.pt = pt; 
 			next = this; 
 			prev = this; 
 		}
-		private ClosedPath(double[] pt, ClosedPath n, ClosedPath p){
-			pt = new double[2]; 
+		private ClosedPath(double[] pt, ClosedPath p){
+			this.pt = new double[2]; 
 			this.pt[0] = pt[0]; 
 			this.pt[1] = pt[1];
-			next = n; 
-			prev = p; 
-			p.next = this; 
-			n.prev = this; 
+			prev = p;
+			next = prev.next; 
+			prev.next = this;
 		}
 		public ClosedPath(SSPath t){
 			this(new double[2]); 
+			int k = 0; 
 			PathIterator pi = t.getPathIterator(new AffineTransform()); 
 			double[] tmp = new double[6]; 
 			pi.currentSegment(tmp); 
@@ -101,17 +101,23 @@ class SSPath extends Path2D.Double {
 			this.pt[1] = tmp[1]; 
 			ClosedPath curr = this; 
 			for(; !pi.isDone(); pi.next()){
+				k++; 
 				int type = pi.currentSegment(tmp); 
 				if(type == PathIterator.SEG_CLOSE) break; 
-				else curr = new ClosedPath(tmp, curr.next, curr.prev); 
+				else {
+					curr = new ClosedPath(tmp, curr); 
+				}
 			}
+			//DONE!
 		}
-		public ClosedPath next(){ return this.next; }
-		public ClosedPath prev(){ return this.prev; }
-		public ClosedPath remove(){ 
-			prev.next = next; 
-			next.prev = prev; 
-			return next; 
+		public SSPath toPath(){
+			ClosedPath star = this;
+			SSPath path = new SSPath(config); 
+			path.moveTo(star.pt[0], star.pt[1]); 
+			ClosedPath curr = star.next;
+			for(;curr != star; curr = curr.next) path.lineTo(curr.pt[0], curr.pt[1]); 
+			path.closePath(); 
+			return path; 
 		}
 	}
 	/**
@@ -125,54 +131,96 @@ class SSPath extends Path2D.Double {
 	 * @return Path with all extraneous points removed
 	 */
 	public SSPath cull(double perc){
-		SSPath npath = new SSPath(config); 
-		PathIterator pi = this.getPathIterator(new AffineTransform());
-		double[][] s = new double[2][6]; 
-		double[] fp  = new double[2]; 
-		int pt = pi.currentSegment(s[0]); 
-		fp[0] = s[0][0]; 
-		fp[1] = s[0][1]; 
-		npath.moveTo(s[0][0], s[0][1]); 
-		pi.next(); 
-		pt = pi.currentSegment(s[1]); 
-		Culler cull = new Culler(s[0], s[1]); //new Culler Object, maintain only 1, we need remove past points, not current maintain a start and finish point
-		
-		s[0][0] = s[1][0]; 
-		s[0][1] = s[1][1]; 
+		ClosedPath npath = new ClosedPath(this); 
+		Culler cull = new Culler(npath, npath.next); //new Culler Object, maintain only 1, we need remove past points, not current maintain a start and finish point
+		ClosedPath spoint = npath;
+		npath = npath.next; 
+		boolean done = false;
 		//int k = 0; 
-		for(; !pi.isDone(); pi.next()){
-			pt = pi.currentSegment(s[1]);
-			if(pt == PathIterator.SEG_CLOSE){//we also need to reduce the end of the path to the beginning of the path
-				/*PathIterator pi2 = npath.getPathIterator(new AffineTransform()); 
-				pi2.currentSegment(s[1]); 
-				if(cull.distance(s[1]) <= 0){
-					pi2.next();
-					SSPath n2path = new SSPath(config); 
-					pi2.currentSegment(s[1]); 
-					n2path.moveTo(s[1][0], s[1][1]);
-					n2path.append(pi2, true);
-					n2path.closePath(); 
-					npath = n2path; 
-				} else */{
-					npath.lineTo(cull.end[0], cull.end[1]); 
-					npath.closePath(); 					
+		for(int hitcount = 0; !done ; npath = npath.next){//we have to go through twice, to make sure the path is truly culled (*note this is because of the beginning never being culled otherwise)
+			if(spoint == npath){//we also need to reduce the end of the path to the beginning of the path
+				if(hitcount == 0) spoint = spoint.next; 
+				else if(hitcount > 1) {//make sure we skip the second time we hit this 
+					cull.start.next = cull.end; 
+					cull.end.prev = cull.start; 
+					done = true; 
+					break; 
 				}
-				break; 
+				hitcount++; 
+			} 
+			
+			if(cull.distance(npath.pt) > perc){//TODO need to maintain size to ensure that if size < 3 that we don't cull any points 
+				cull.start.next = cull.end; 
+				cull.end.prev = cull.start; 
+				cull.setStart(cull.end);
+				cull.setEnd(npath); 
 			} else {
-				if(cull.distance(s[1]) > perc){
-					npath.lineTo(cull.end[0], cull.end[1]); 
-					cull.setStart(cull.end);
-					cull.setEnd(s[1]); 
-				} else {
-					//k++; 
-					cull.setEnd(s[1]); 
-				}
+				if(npath == spoint)//make sure we have a starting point which is actually valid, e.g. make sure its not culled
+					spoint = cull.start; 
+				cull.setEnd(npath); 
 			}
-			s[0][0] = s[1][0]; 
-			s[0][1] = s[1][1]; 
+		
 		}
-		return npath;  
+		return spoint.toPath();  
 	}
-	
+	public SSPath computeShell(double dist){
+		ClosedPath pi = new ClosedPath(this); //create a copy of a closed list
+		double[][] ls = new double[3][6]; 
+		ls[0] = pi.pt;
+		pi = pi.next; 
+		ls[1] = pi.pt; 
+		pi = pi.next; //fill in first two segments, but
+		ClosedPath fp = pi; 
+		boolean done = false; 
+		for(int hitcount = 0; !done; pi = pi.next){
+			ls[2] = pi.pt; 
+			if(fp == pi){//we also need to reduce the end of the path to the beginning of the path
+				if(hitcount == 0) fp = fp.next; 
+				else if(hitcount > 1) {//make sure we skip the second time we hit this 
+					done = true; 
+					break; 
+				}
+				hitcount++; 
+			} 
+			double[] u = { ls[1][0]-ls[0][0], ls[1][1]-ls[0][1] };//vector starting from ls[0] 
+			double ulen = mag(u); 
+			double[] u_perp = { -u[1]*dist/ulen, u[0]*dist/ulen }; 
+			double[] v = { ls[2][0]-ls[1][0], ls[2][1]-ls[1][1] };//vector starting from ls[1]
+			double vlen = mag(v);
+			double[] v_perp = { -v[1]*dist/vlen, v[0]*dist/vlen }; 
+			
+			double[][] ls2= {  {ls[0][0] + u_perp[0], ls[0][1] + u_perp[1]},
+								{ls[1][0] + u_perp[0], ls[1][1] + u_perp[1]},
+							   {ls[1][0] + v_perp[0], ls[1][1] + v_perp[1]},
+								{ls[2][0] + v_perp[0], ls[2][1] + v_perp[1]}};//build perpendicular lines
+			ls[1] = findIntersection(ls2); 
+			//add ls[0] and ls[1] to the list
+			ls[0] = ls[1]; 
+			ls[1] = ls[2]; 
+		}
+		return fp.toPath();
+	}
+	private double[] findIntersection(double[][] ls) {
+		double m0 = (ls[1][1]-ls[0][1])/(ls[1][0]-ls[0][0]);
+		double b0 = ls[0][1]-m0*ls[0][0]; 
+		double m1 = (ls[3][1]-ls[2][1])/(ls[3][0]-ls[2][0]); 
+		double b1 = ls[2][1]-m1*ls[2][0]; //all necessary parameters are computed.
+		if(m0 == java.lang.Double.NaN 
+				|| m0 == java.lang.Double.NEGATIVE_INFINITY 
+				|| m0 == java.lang.Double.POSITIVE_INFINITY) System.out.println("m0 is a vertical line");
+		if(m1 == java.lang.Double.NaN
+				|| m1 == java.lang.Double.NEGATIVE_INFINITY //handle these cases
+				|| m1 == java.lang.Double.POSITIVE_INFINITY) System.out.println("m1 is a vertical line");
+		if(m0 == m1){
+			return ls[1]; //return any point as they are parallel
+		} else {
+			double[] pt = new double[6]; 
+			pt[0] = (b0-b1)/(m1-m0);
+			pt[1] = m0*pt[0]+b0; //finally compute y value.
+			return pt;
+		}
+	}
+
+	private double mag(double[] u){ return Math.sqrt(u[0]*u[0]+u[1]*u[1]); }
 }
 
