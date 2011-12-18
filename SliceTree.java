@@ -32,14 +32,16 @@ public class SliceTree {
 			return arr[idx]; 
 		}
 	}
-	ArrayList<ITn> root; 
+	ArrayList<ITn> root;
+	private int number_of_paths; 
 	public SliceTree(ArrayList<SSPath> paths){
+		number_of_paths = paths.size(); 
 		LinkedList<IndexBooleanArray> pathtype = new LinkedList<IndexBooleanArray>();
 		for(int i = 0; i < paths.size(); i++){
 			IndexBooleanArray cpath = new IndexBooleanArray(i, paths.size());
 			for(int j = 0; j < paths.size(); j++)
 				if(i == j) cpath.arr[j] = false; //the diagonal should be false (path doesn't contain itself)
-				else cpath.arr[j] = paths.get(j).contains(paths.get(i).getCurrentPoint());//assume that we don't have intersecting paths
+				else cpath.arr[j] = paths.get(j).contains(paths.get(i).getCurrentPoint());
 			pathtype.add(cpath); 
 		}//n^2 
 		

@@ -241,6 +241,7 @@ public class SuperSkein extends PApplet {
 					for(; !iter.isDone(); iter.next()){
 						int type = iter.currentSegment(p[2]);
 						if(type == PathIterator.SEG_MOVETO){//TODO handle if path is not a complete object with n>3 vertexes
+							ellipse((float)p[2][0], (float)p[2][1], 1, 1); 
 							iter.currentSegment(p[0]); 
 							iter.next(); 
 							iter.currentSegment(p[1]); //we have to flush the other two points...
@@ -253,7 +254,6 @@ public class SuperSkein extends PApplet {
 							line(p[0][0], p[0][1], p[1][0], p[1][1]);
 							//ellipse((float)p[0][0], (float)p[0][1], 1, 1);
 							ellipse((float)p[1][0], (float)p[1][1], (float)1./2, (float)1./2);
-							ellipse((float)p[0][0], (float)p[0][1], 2, 2); 
 						} else if(type == PathIterator.SEG_CLOSE) {
 							p[2][0] = fp[0][0]; 
 							p[2][1] = fp[0][1]; 
