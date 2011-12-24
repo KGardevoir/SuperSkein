@@ -130,7 +130,18 @@ class Slice {
 				}
 			}
 		}
-		
+		//now we detect duplicate paths
+		/*for(int i = 0; i < paths.size(); i++){
+			double a1 = Math.abs(paths.get(i).getArea()); 
+			for(int j = i+1; j < paths.size(); j++){
+				double a2 = Math.abs(paths.get(i).getUnionArea(paths.get(j))); 
+				if(Math.abs(a1-a2) < epsilon){//if the path adds very little to the shape, remove it.
+					paths.remove(j--); 
+					System.out.println("Removed duplicate path");
+				}
+			}
+		}*/
+				
 		//now we iterate, again, to merge strait lines
 		for(int i = 0; i < paths.size(); i++){
 			paths.set(i, paths.get(i).cull());

@@ -116,27 +116,10 @@ public class SliceTree {
 		LinkedList<ITn> clevel = new LinkedList<ITn>(root); 
 		while(!clevel.isEmpty()){
 			ITn list = clevel.remove();
-			PathIterator p = list.path.getPathIterator(new AffineTransform());
-			double sum = 0; 
-			double[][] s = new double[2][6]; 
-			double[] fs = new double[2]; 
-			p.currentSegment(s[0]); 
-			fs[0] = s[0][0]; 
-			fs[1] = s[0][1]; 
-			for(; !p.isDone(); p.next()){
-				int f = p.currentSegment(s[1]); 
-				if(f == PathIterator.SEG_CLOSE){
-					sum += (fs[0]-s[1][0])*(fs[1]+s[1][1]); 
-					break;
-				} else {
-					sum += (s[1][0]-s[0][0])*(s[1][1]+s[0][1]);
-					s[0][0] = s[1][0]; 
-					s[0][1] = s[1][1]; 
-				}
-			}
-			if(sum < 0 && !list.interior)//incorrect winding order
+			double area = list.path.getArea();
+			if(area < 0 && !list.interior)//incorrect winding order
 				list.path.reverse(); 
-			else if(sum >= 0 && list.interior)
+			else if(area >= 0 && list.interior)
 				list.path.reverse(); 
 			
 			clevel.addAll(list.children); 

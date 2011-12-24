@@ -1,6 +1,7 @@
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.PathIterator;
 import java.util.ArrayList;
 
 class SSArea extends Area {
@@ -46,5 +47,31 @@ class SSArea extends Area {
 		} else {
 			this.subtract(innerArea);
 		}
+	}
+	static public double getArea(Shape path) {//TODO finish, currently stops when a SEG_CLOSE is encountered
+		PathIterator p = path.getPathIterator(new AffineTransform());
+		if(p.isDone()) return 0;
+		double sum = 0; 
+		double[][] s = new double[2][6]; 
+		double[] fs = new double[2]; 
+		
+		for(; !p.isDone(); p.next()){
+			int f = p.currentSegment(s[1]); 
+			switch(f){
+			case PathIterator.SEG_CLOSE: 
+				sum += (fs[0]-s[1][0])*(fs[1]+s[1][1]); 
+				break;
+			case PathIterator.SEG_LINETO:
+				sum += (s[1][0]-s[0][0])*(s[1][1]+s[0][1]);
+				s[0][0] = s[1][0]; 
+				s[0][1] = s[1][1]; 
+				break; 
+			case PathIterator.SEG_MOVETO: 
+				fs[0] = s[0][0] = s[1][0]; 
+				fs[1] = s[0][1] = s[1][1]; 
+				break; 
+			}
+		}
+		return sum/2; //is half the area bounded by the sum
 	}
 }

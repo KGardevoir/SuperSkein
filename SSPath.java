@@ -1,5 +1,7 @@
 // Path Class
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.util.ArrayList;
@@ -21,7 +23,6 @@ class SSPath extends Path2D.Double {
 		super(firstLine);
 		config = conf; 
 	}
-
 	void reverse(){
 		PathIterator iter = this.getPathIterator(new AffineTransform()); 
 		ArrayList<java.lang.Double> list = new ArrayList<java.lang.Double>(); 
@@ -163,6 +164,14 @@ class SSPath extends Path2D.Double {
 		}
 		return spoint.toPath();  
 	}
+	
+	public double getUnionArea(SSPath p2){//returns the amount of area intersecting
+		Area inter = new Area((Shape) this);
+		inter.add(new Area((Shape)p2));
+		return SSArea.getArea(inter); //now compute the area
+	}
+
+
 	public SSPath computeShell(double dist){
 		ClosedPath pi = new ClosedPath(this); //create a copy of a closed list
 		double[][] ls = new double[3][6]; 
@@ -220,7 +229,28 @@ class SSPath extends Path2D.Double {
 			return pt;
 		}
 	}
-
+	public double getArea(){
+		PathIterator p = getPathIterator(new AffineTransform());
+		double sum = 0; 
+		double[][] s = new double[2][6]; 
+		double[] fs = new double[2]; 
+		p.currentSegment(s[0]); 
+		fs[0] = s[0][0]; 
+		fs[1] = s[0][1]; 
+		for(; !p.isDone(); p.next()){
+			int f = p.currentSegment(s[1]); 
+			if(f == PathIterator.SEG_CLOSE){
+				sum += (fs[0]-s[1][0])*(fs[1]+s[1][1]); 
+				break;
+			} else {
+				sum += (s[1][0]-s[0][0])*(s[1][1]+s[0][1]);
+				s[0][0] = s[1][0]; 
+				s[0][1] = s[1][1]; 
+			}
+		}
+		return sum/2; //is twice the area bounded by the sum
+	}
 	private double mag(double[] u){ return Math.sqrt(u[0]*u[0]+u[1]*u[1]); }
+	
 }
 

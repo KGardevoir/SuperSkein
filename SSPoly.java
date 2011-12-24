@@ -16,7 +16,29 @@ class SSPoly extends Polygon {
 	SSPoly(Configuration conf){
 		config = conf; 
 	}
-
+	/**
+	 * Create a Polygon based on a path. It will use up until the first SEG_CLOSE
+	 */
+	SSPoly(SSPath path){
+		PathIterator ip = path.getPathIterator(new AffineTransform()); 
+		boolean stop_flag = true; 
+		for(; !ip.isDone() && stop_flag; ip.next()){
+			double[] c = new double[6]; 
+			int type = ip.currentSegment(c); 
+			switch(type){
+			case PathIterator.SEG_MOVETO:
+				this.addPoint(c[0], c[1]); 
+				break; 
+			case PathIterator.SEG_LINETO: 
+				this.addPoint(c[0], c[1]);
+				break; 
+			case PathIterator.SEG_CLOSE: 
+				stop_flag = false; 
+				break; 
+			}
+		}
+		
+	}
 	void setDebugFlag(boolean aBool) { debugFlag = aBool; }
 	boolean getDebugFlag() { return(debugFlag); }
 
